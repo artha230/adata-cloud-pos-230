@@ -1,0 +1,2794 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para/Outlet - POS System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --sidebar-w: 260px;
+            --sidebar-w-dock: 76px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --blue: #2563EB;
+            --blue-hover: #1D4ED8;
+            --green: #16A34A;
+            --red: #DC2626;
+            --orange: #F59E0B;
+            --purple: #7C3AED;
+            --teal: #0D9488;
+            --gray1: #64748B;
+            --gray2: #475569;
+            --gray3: #CBD5E1;
+            --gray4: #94A3B8;
+            --gray5: #E2E8F0;
+            --gray6: #F1F5F9;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F1F5F9;
+            --bg-tertiary: #F8FAFC;
+            --bg-sidebar: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8FAFC;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-tertiary: #94A3B8;
+            --border: rgba(15,23,42,0.08);
+            --border-strong: rgba(15,23,42,0.14);
+            --shadow-sm: 0 1px 2px rgba(15,23,42,0.06);
+            --shadow-md: 0 4px 12px rgba(15,23,42,0.08);
+            --shadow-lg: 0 12px 32px rgba(15,23,42,0.12);
+            --glass: rgba(255,255,255,0.78);
+            --glass-border: rgba(255,255,255,0.6);
+            --input-bg: #F1F5F9;
+            --nav-hover: rgba(15,23,42,0.05);
+            --nav-active: rgba(37,99,235,0.1);
+            --nav-active-text: #2563EB;
+            --overlay: rgba(15,23,42,0.35);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0B1220;
+            --bg-secondary: #0B1220;
+            --bg-tertiary: #111827;
+            --bg-sidebar: #0F172A;
+            --bg-card: #111827;
+            --bg-card-hover: #1E293B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-tertiary: #64748B;
+            --border: rgba(148,163,184,0.12);
+            --border-strong: rgba(148,163,184,0.18);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+            --shadow-lg: 0 12px 32px rgba(0,0,0,0.6);
+            --glass: rgba(17,24,39,0.78);
+            --glass-border: rgba(148,163,184,0.12);
+            --input-bg: #1E293B;
+            --nav-hover: rgba(255,255,255,0.06);
+            --nav-active: rgba(59,130,246,0.16);
+            --nav-active-text: #60A5FA;
+            --overlay: rgba(0,0,0,0.6);
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ LOGIN ============ */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: var(--bg-secondary);
+            display: flex; align-items: center; justify-content: center;
+            transition: background var(--transition);
+        }
+
+        .login-card {
+            width: 100%; max-width: 380px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            padding: 48px 36px 36px;
+            border: 1px solid var(--border);
+        }
+
+        .login-logo {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .login-logo i { color: #fff; font-size: 28px; }
+
+        .login-card h2 {
+            text-align: center; font-size: 22px; font-weight: 700;
+            margin-bottom: 4px; color: var(--text-primary);
+        }
+
+        .login-card p {
+            text-align: center; font-size: 13px;
+            color: var(--text-secondary); margin-bottom: 28px;
+        }
+
+        .input-group {
+            position: relative; margin-bottom: 16px;
+            display: block; flex-wrap: nowrap;
+        }
+
+        .input-group label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+        }
+
+        .input-group .input-wrap {
+            position: relative; display: flex; align-items: center;
+        }
+
+        .input-group .input-icon {
+            position: absolute; left: 14px;
+            color: var(--text-tertiary); font-size: 15px;
+            pointer-events: none;
+        }
+
+        .input-group input {
+            width: 100%; padding: 12px 14px 12px 42px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            font-size: 15px; font-family: var(--font);
+            color: var(--text-primary);
+            outline: none; transition: border 0.2s;
+        }
+
+        .input-group input::placeholder { color: var(--text-tertiary); }
+        .input-group input:focus { border-color: var(--blue); }
+
+        .login-alert {
+            background: rgba(255,59,48,0.1);
+            color: var(--red);
+            font-size: 13px; font-weight: 500;
+            padding: 10px 14px; border-radius: var(--radius-sm);
+            margin-bottom: 16px; display: none;
+        }
+
+        .login-alert.show { display: block; }
+
+        .login-alert i { margin-right: 6px; }
+
+        .apple-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border: none; border-radius: var(--radius-sm);
+            font-size: 15px; font-weight: 600; font-family: var(--font);
+            cursor: pointer; transition: all 0.2s; text-decoration: none;
+            -webkit-user-select: none; user-select: none;
+        }
+
+        .apple-btn-primary {
+            background: var(--blue); color: #fff; width: 100%;
+        }
+
+        .apple-btn-primary:hover { background: var(--blue-hover); }
+
+        .apple-btn-primary:active { transform: scale(0.98); }
+
+        .apple-btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            color: var(--text-primary);
+        }
+
+        .apple-btn-outline:hover { background: var(--nav-hover); }
+
+        .apple-btn-sm { padding: 8px 16px; font-size: 13px; }
+
+        .apple-btn-success { background: var(--green); color: #fff; }
+
+        .apple-btn-danger { background: var(--red); color: #fff; }
+
+        .apple-btn-danger:hover { background: #E0342A; }
+
+        .apple-btn-purple { background: var(--purple); color: #fff; }
+
+        .apple-btn-orange { background: var(--orange); color: #fff; }
+
+        .login-footer {
+            text-align: center; margin-top: 24px;
+            font-size: 12px; color: var(--text-tertiary);
+        }
+
+        .login-footer span {
+            display: inline-block; background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px; padding: 4px 10px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 12px; color: var(--text-secondary);
+        }
+
+        /* ============ SIDEBAR ============ */
+        #sidebar-overlay {
+            position: fixed; inset: 0; z-index: 998;
+            background: var(--overlay); opacity: 0;
+            pointer-events: none; transition: opacity var(--transition);
+        }
+
+        #sidebar-overlay.active { opacity: 1; pointer-events: all; }
+
+        #sidebar {
+            width: var(--sidebar-w); height: 100vh;
+            position: fixed; top: 0; left: 0;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            z-index: 999;
+            display: flex; flex-direction: column;
+            transform: translateX(0);
+            transition: transform var(--transition), background var(--transition), width var(--transition);
+            overflow-y: auto;
+        }
+
+        [data-theme="dark"] #sidebar { background: var(--bg-sidebar); }
+
+        .sidebar-header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .sidebar-logo {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo i { color: #fff; font-size: 16px; }
+
+        .sidebar-brand {
+            font-size: 16px; font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1; padding: 12px 10px;
+        }
+
+        .sidebar-nav .nav-label {
+            font-size: 11px; font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 8px 14px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; margin: 1px 0;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 14px; font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .nav-link:hover { background: var(--nav-hover); color: var(--text-primary); }
+
+        .nav-link.active {
+            background: var(--nav-active);
+            color: var(--nav-active-text);
+        }
+
+        .nav-link i {
+            width: 20px; text-align: center;
+            font-size: 16px;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .theme-toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .theme-toggle-label {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .theme-toggle-label i { font-size: 16px; width: 20px; text-align: center; }
+
+        .toggle-switch {
+            position: relative; width: 44px; height: 26px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input { display: none; }
+
+        .toggle-slider {
+            position: absolute; inset: 0;
+            background: var(--gray4);
+            border-radius: 13px; transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: ''; position: absolute;
+            width: 22px; height: 22px;
+            left: 2px; top: 2px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--blue);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
+
+        /* ============ DOCK / LITE MODE ============ */
+        .mode-toggle i { width: 20px; text-align: center; font-size: 16px; }
+
+        .mode-toggle { background: none; border: none; width: 100%; cursor: pointer; }
+
+        .mode-toggle .icon-dock { display: none; }
+
+        body[data-sidebar-mode="dock"] #sidebar { width: var(--sidebar-w-dock); }
+
+        body[data-sidebar-mode="dock"] #main-content { margin-left: var(--sidebar-w-dock); }
+
+        body[data-sidebar-mode="dock"] .sidebar-header {
+            justify-content: center; padding: 20px 8px 16px;
+        }
+
+        body[data-sidebar-mode="dock"] .sidebar-logo { width: 40px; height: 40px; border-radius: 12px; }
+
+        body[data-sidebar-mode="dock"] .sidebar-brand { display: none; }
+
+        body[data-sidebar-mode="dock"] .sidebar-nav { padding: 12px 8px; }
+
+        body[data-sidebar-mode="dock"] .nav-label { display: none; }
+
+        body[data-sidebar-mode="dock"] .nav-link {
+            justify-content: center; padding: 11px 0; position: relative;
+        }
+
+        body[data-sidebar-mode="dock"] .nav-link > span { display: none; }
+
+        body[data-sidebar-mode="dock"] .nav-link i { width: auto; font-size: 18px; }
+
+        body[data-sidebar-mode="dock"] .nav-link::after {
+            content: attr(data-tooltip);
+            position: absolute; left: calc(100% + 14px); top: 50%;
+            transform: translateY(-50%) scale(0.95); transform-origin: left center;
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            padding: 6px 12px; font-size: 12px; font-weight: 600;
+            white-space: nowrap; z-index: 300;
+            opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        body[data-sidebar-mode="dock"] .nav-link:hover::after {
+            opacity: 1; transform: translateY(-50%) scale(1);
+        }
+
+        body[data-sidebar-mode="dock"] .sidebar-footer { padding: 14px 10px; }
+
+        body[data-sidebar-mode="dock"] .theme-toggle { justify-content: center; cursor: pointer; }
+
+        body[data-sidebar-mode="dock"] .theme-toggle-label { justify-content: center; }
+
+        body[data-sidebar-mode="dock"] .theme-toggle-label span { display: none; }
+
+        body[data-sidebar-mode="dock"] .theme-toggle-label i { width: auto; font-size: 18px; }
+
+        body[data-sidebar-mode="dock"] .toggle-switch { display: none; }
+
+        body[data-sidebar-mode="dock"] .mode-toggle { justify-content: center; }
+
+        body[data-sidebar-mode="dock"] .mode-toggle span { display: none; }
+
+        body[data-sidebar-mode="dock"] .mode-toggle .icon-lite { display: none; }
+
+        body[data-sidebar-mode="dock"] .mode-toggle .icon-dock { display: inline-block; }
+
+        .theme-toggle { cursor: pointer; border-radius: var(--radius-sm); transition: background 0.15s; }
+
+        .theme-toggle:hover { background: var(--nav-hover); }
+
+        /* ============ MAIN CONTENT ============ */
+        #main-content {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+            transition: margin var(--transition);
+        }
+
+        .top-bar {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .top-bar-left {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none; border: none;
+            color: var(--text-primary);
+            font-size: 20px; cursor: pointer;
+            padding: 6px; border-radius: 8px;
+        }
+
+        .menu-toggle:hover { background: var(--nav-hover); }
+
+        .page-title {
+            font-size: 18px; font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px;
+            background: rgba(52,199,89,0.12);
+            color: var(--green);
+            border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+        }
+
+        .status-badge::before {
+            content: ''; width: 6px; height: 6px;
+            background: var(--green); border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .top-bar-right {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        .clock {
+            font-size: 13px; font-weight: 500;
+            color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer; font-family: var(--font);
+            font-size: 14px; font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .user-btn:hover { background: var(--nav-hover); }
+
+        .user-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 13px; font-weight: 600;
+        }
+
+        .dropdown-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 6px;
+            min-width: 180px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 6px; display: none; z-index: 200;
+        }
+
+        .dropdown-menu.show { display: block; }
+
+        .dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: var(--radius-sm);
+            font-size: 14px; color: var(--text-primary);
+            cursor: pointer; transition: background 0.15s;
+            text-decoration: none; border: none; background: none;
+            width: 100%; font-family: var(--font);
+        }
+
+        .dropdown-item:hover { background: var(--nav-hover); }
+
+        .dropdown-item.danger { color: var(--red); }
+
+        .page-body {
+            padding: 24px;
+        }
+
+        /* ============ CARDS ============ */
+        .apple-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+            transition: all var(--transition);
+        }
+
+        .apple-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .apple-card-title {
+            font-size: 16px; font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card .stat-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; margin-bottom: 12px;
+        }
+
+        .stat-card .stat-icon.blue { background: rgba(0,122,255,0.1); color: var(--blue); }
+        .stat-card .stat-icon.green { background: rgba(52,199,89,0.1); color: var(--green); }
+        .stat-card .stat-icon.purple { background: rgba(175,82,222,0.1); color: var(--purple); }
+        .stat-card .stat-icon.orange { background: rgba(255,149,0,0.1); color: var(--orange); }
+        .stat-card .stat-icon.teal { background: rgba(13,148,136,0.1); color: var(--teal); }
+
+        .stat-label {
+            font-size: 13px; font-weight: 500;
+            color: var(--text-secondary); margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px; font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* ============ DASHBOARD ============ */
+        .dash-grid {
+            display: grid; grid-template-columns: 1.6fr 1fr;
+            gap: 20px; margin-bottom: 20px;
+        }
+
+        .chart-row {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .chart-label {
+            width: 110px; font-size: 13px; font-weight: 600;
+            color: var(--text-secondary); flex-shrink: 0;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .chart-track {
+            flex: 1; height: 10px;
+            background: var(--input-bg);
+            border-radius: 5px; overflow: hidden;
+        }
+
+        .chart-fill {
+            height: 100%; border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .chart-val { font-size: 13px; font-weight: 700; color: var(--text-primary); min-width: 24px; text-align: right; }
+
+        .dash-order {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; margin-bottom: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .dash-order-info { min-width: 0; }
+
+        .dash-order-info b { font-size: 13px; color: var(--text-primary); display: block; }
+
+        .dash-order-date { font-size: 12px; color: var(--text-tertiary); }
+
+        .dash-order-amount { font-weight: 700; font-size: 14px; color: var(--green); }
+
+        .dash-empty { font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 24px 0; }
+
+        @media (max-width: 1024px) {
+            .dash-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ============ SEARCH & FILTERS ============ */
+        .search-bar {
+            position: relative; margin-bottom: 20px;
+        }
+
+        .search-bar i {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--text-tertiary); font-size: 15px;
+        }
+
+        .search-bar input {
+            width: 100%; padding: 12px 14px 12px 42px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 15px; font-family: var(--font);
+            color: var(--text-primary);
+            outline: none; transition: border 0.2s;
+        }
+
+        .search-bar input::placeholder { color: var(--text-tertiary); }
+        .search-bar input:focus { border-color: var(--blue); }
+
+        .filter-pills {
+            display: flex; gap: 8px; margin-bottom: 20px;
+            overflow-x: auto; padding-bottom: 4px;
+        }
+
+        .filter-pills::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px; font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer; white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-pill:hover { background: var(--nav-hover); }
+
+        .filter-pill.active {
+            background: var(--blue);
+            color: #fff; border-color: var(--blue);
+        }
+
+        /* ============ PRODUCT GRID ============ */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px; max-height: calc(100vh - 300px);
+            overflow-y: auto; padding-right: 4px;
+        }
+
+        .product-grid::-webkit-scrollbar { width: 4px; }
+        .product-grid::-webkit-scrollbar-track { background: transparent; }
+        .product-grid::-webkit-scrollbar-thumb { background: var(--gray3); border-radius: 2px; }
+
+        .product-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--blue);
+        }
+
+        .product-card:active { transform: scale(0.97); }
+
+        .product-icon {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            background: var(--nav-active);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 20px; color: var(--blue);
+        }
+
+        .product-name {
+            font-size: 13px; font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .product-category {
+            font-size: 11px; color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 16px; font-weight: 700;
+            color: var(--blue);
+        }
+
+        .keypad-qty-line {
+            display: flex; justify-content: space-between;
+            align-items: center;
+            font-size: 14px; color: var(--text-secondary);
+            background: var(--input-bg);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px; margin-bottom: 12px;
+        }
+
+        .keypad-qty-line b { color: var(--text-primary); }
+
+        /* ============ TABLE ============ */
+        .apple-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+        }
+
+        .apple-table th {
+            font-size: 12px; font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase; letter-spacing: 0.3px;
+            padding: 10px 14px; text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .apple-table td {
+            font-size: 14px; color: var(--text-primary);
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .apple-table tr:last-child td { border-bottom: none; }
+
+        .apple-table tr:hover td { background: var(--nav-hover); }
+
+        .apple-badge {
+            display: inline-flex; align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px; font-weight: 600;
+        }
+
+        .apple-badge-blue { background: rgba(0,122,255,0.1); color: var(--blue); }
+        .apple-badge-green { background: rgba(52,199,89,0.1); color: var(--green); }
+        .apple-badge-red { background: rgba(255,59,48,0.1); color: var(--red); }
+        .apple-badge-orange { background: rgba(255,149,0,0.1); color: var(--orange); }
+        .apple-badge-purple { background: rgba(175,82,222,0.1); color: var(--purple); }
+        .apple-badge-gray { background: var(--input-bg); color: var(--text-secondary); }
+
+        /* ============ FORMS ============ */
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%; padding: 10px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            font-size: 14px; font-family: var(--font);
+            color: var(--text-primary);
+            outline: none; transition: border 0.2s;
+        }
+
+        .form-input:focus { border-color: var(--blue); }
+
+        .form-row {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* ============ MODAL ============ */
+        .modal-backdrop-custom {
+            position: fixed; inset: 0; z-index: 9000;
+            background: var(--overlay);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s;
+        }
+
+        .modal-backdrop-custom.show { opacity: 1; pointer-events: all; }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 90%; max-width: 400px;
+            padding: 32px 28px;
+            transform: scale(0.95);
+            transition: transform 0.25s;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+        }
+
+        .modal-backdrop-custom.show .modal-box { transform: scale(1); }
+
+        .modal-box .receipt-header {
+            text-align: center; margin-bottom: 16px;
+        }
+
+        .modal-box .receipt-header h4 {
+            font-size: 18px; font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .modal-box .receipt-header p {
+            font-size: 12px; color: var(--text-tertiary);
+        }
+
+        .modal-actions {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+
+        .modal-actions .apple-btn { flex: 1; }
+
+        /* ============ POS LAYOUT ============ */
+        .pos-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        /* ============ POS FULLSCREEN SESSION ============ */
+        body.pos-fullscreen { overflow: hidden; }
+
+        body.pos-fullscreen #sidebar { transform: translateX(-100%); }
+
+        body.pos-fullscreen #main-content { margin-left: 0; }
+
+        body.pos-fullscreen .top-bar { display: none; }
+
+        body.pos-fullscreen .page-body { padding: 0; }
+
+        body.pos-fullscreen .pos-layout { height: calc(100vh - 46px); margin-top: 46px; }
+
+        body.pos-fullscreen .product-grid {
+            max-height: calc(100vh - 120px);
+            padding-right: 6px;
+        }
+
+        .pos-window-bar {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
+            height: 46px;
+            padding: 0 16px;
+            align-items: center; justify-content: space-between;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        body.pos-fullscreen .pos-window-bar { display: flex; }
+
+        .pos-window-title {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 700; color: var(--text-primary);
+        }
+
+        .pos-window-title i { color: var(--blue); }
+
+        .pos-window-controls { display: flex; align-items: center; gap: 8px; }
+
+        .win-btn {
+            width: 32px; height: 28px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: none; border-radius: 8px;
+            background: var(--input-bg); color: var(--text-secondary);
+            font-size: 12px; cursor: pointer; transition: all 0.15s;
+        }
+
+        .win-btn:hover { background: var(--nav-hover); color: var(--text-primary); }
+
+        .win-btn.exit { color: var(--red); }
+
+        .win-btn.exit:hover { background: rgba(255,59,48,0.1); }
+
+        /* ============ POS GRID CONTROLS ============ */
+        #pos-product-list {
+            grid-template-columns: repeat(var(--pos-cols, 7), 1fr);
+        }
+
+        .product-grid .product-card {
+            height: var(--pos-card-h, 170px);
+            display: flex; flex-direction: column;
+            padding: 0; overflow: hidden; text-align: center;
+        }
+
+        .product-grid .product-card .product-img {
+            flex: 1 1 auto; width: 100%; min-height: 0;
+            object-fit: var(--pos-img-fill, cover);
+            margin: 0; border-radius: 0;
+        }
+
+        .product-grid .product-card .product-icon {
+            flex: 1 1 auto; width: calc(44px * var(--pos-scale, 1)); height: calc(44px * var(--pos-scale, 1));
+            font-size: calc(18px * var(--pos-scale, 1)); margin: auto;
+        }
+
+        .product-grid .product-meta {
+            padding: 8px 10px 10px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .product-grid .product-name { font-size: calc(13px * var(--pos-scale, 1)); margin-bottom: 2px; }
+
+        .product-grid .product-price { font-size: calc(16px * var(--pos-scale, 1)); }
+
+        .prod-thumb { width: 34px; height: 34px; object-fit: contain; border-radius: 6px; margin-right: 8px; vertical-align: middle; }
+
+        .prod-thumb-icon { color: var(--text-tertiary); font-size: 18px; margin-right: 8px; }
+
+        /* ============ LIVE BOARD EDITOR ============ */
+        .pos-editor-toggle {
+            position: fixed; bottom: 24px; right: 24px; z-index: 7500;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--blue); color: #fff; border: none;
+            font-size: 18px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+            transition: transform 0.2s, background 0.15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pos-editor-toggle:hover { background: #1d4ed8; transform: scale(1.08); }
+
+        .pos-editor-panel {
+            position: fixed; top: 0; right: -320px; bottom: 0; z-index: 7600;
+            width: 300px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+            transition: right 0.3s ease;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .pos-editor-panel.open { right: 0; }
+
+        .pos-editor-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px; font-weight: 700; color: var(--text-primary);
+        }
+        .pos-editor-header i { color: var(--blue); margin-right: 8px; }
+
+        .pos-editor-close {
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            background: var(--input-bg); color: var(--text-secondary);
+            cursor: pointer; font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pos-editor-close:hover { background: var(--nav-hover); }
+
+        .pos-editor-body { padding: 16px 20px; }
+
+        .pos-editor-row {
+            margin-bottom: 18px;
+        }
+        .pos-editor-row label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 6px;
+        }
+        .pos-editor-row input[type="range"] {
+            width: 100%; accent-color: var(--blue);
+        }
+        .pos-editor-row span {
+            display: block; text-align: right; font-size: 12px;
+            color: var(--text-tertiary); margin-top: 2px;
+        }
+
+        /* ============ KEYPAD / QUICK SELL ============ */
+        #keypadModal {
+            --kp-w: 420px;
+            --kp-h: 68px;
+            --kp-font: 26px;
+            --kp-gap: 12px;
+            --kp-accent: var(--nav-active);
+        }
+
+#keypadModal { align-items: stretch; justify-content: stretch; }
+
+        #keypadModal .modal-box {
+            width: min(92vw, var(--kp-w, 420px));
+            max-width: none;
+            max-height: min(calc(100vh - 20px), 94vh);
+            padding: clamp(10px, 2.5vw, 28px);
+            margin: auto;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        #keypadModal.kp-center-off { align-items: stretch; justify-content: stretch; padding-top: 40px; }
+        #keypadModal.kp-center-off .modal-box { margin: 40px auto auto; }
+
+        .keypad-product { text-align: center; margin-bottom: clamp(6px, 1.5vw, 14px); }
+
+        .keypad-product img {
+            width: clamp(38px, 12vw, 76px);
+            height: clamp(38px, 12vw, 76px);
+            object-fit: contain; border-radius: 10px;
+        }
+
+        .keypad-product-name {
+            font-size: clamp(12px, 3.5vw, 20px);
+            font-weight: 700; margin-top: 4px; color: var(--text-primary);
+        }
+
+        .keypad-product-price {
+            font-size: clamp(14px, 5vw, 26px);
+            font-weight: 800; color: var(--blue); margin-top: 2px;
+        }
+
+        .qty-display {
+            font-size: clamp(22px, 7vw, 44px);
+            font-weight: 800; text-align: center;
+            padding: clamp(6px, 1.8vw, 14px) clamp(4px, 1.2vw, 12px);
+            margin-bottom: clamp(6px, 1.5vw, 12px);
+            background: var(--input-bg);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
+            word-break: break-all;
+            min-height: clamp(36px, 9vw, 60px);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #keypadModal .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(4px, 1.5vw, var(--kp-gap, 12px));
+        }
+
+        #keypadModal .keypad-btn {
+            min-height: clamp(34px, min(11vw, var(--kp-h, 68px), calc((90vh - 280px) / 5), 68px));
+            border: 1px solid var(--border-strong);
+            border-radius: clamp(8px, 2.5vw, 14px);
+            background: var(--input-bg); color: var(--text-primary);
+            font-size: var(--kp-font, 26px);
+            font-weight: 700; font-family: var(--font);
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        #keypadModal .keypad-btn:hover { background: var(--nav-hover); }
+        #keypadModal .keypad-btn:active { transform: scale(0.94); }
+
+        #keypadModal .keypad-btn.special {
+            background: var(--kp-accent, var(--nav-active));
+            color: #fff; border-color: transparent;
+        }
+
+        .keypad-btn.spacer { visibility: hidden; }
+
+        #keypadModal .sell-row {
+            display: flex; gap: clamp(6px, 1.8vw, 12px);
+            margin-top: clamp(10px, 2.5vw, 16px);
+        }
+
+        #keypadModal .keypad-sell {
+            flex: 2;
+            min-height: clamp(36px, min(10vw, var(--kp-h, 68px), calc((90vh - 280px) / 5), 62px));
+            font-size: clamp(15px, 4vw, 20px);
+            font-weight: 700;
+        }
+
+        #keypadModal .keypad-cancel {
+            flex: 1;
+            min-height: clamp(36px, min(10vw, var(--kp-h, 68px), calc((90vh - 280px) / 5), 62px));
+            background: var(--input-bg); color: var(--text-secondary);
+            font-size: clamp(13px, 3.5vw, 17px);
+            font-weight: 600;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1024px) {
+            body.pos-fullscreen .pos-layout { height: auto; }
+        }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+
+            #sidebar.open { transform: translateX(0); }
+
+            #main-content { margin-left: 0; }
+
+            body[data-sidebar-mode="dock"] #main-content { margin-left: 0; }
+
+            .menu-toggle { display: block; }
+
+            .page-body { padding: 16px; }
+
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            }
+
+            .form-row { grid-template-columns: 1fr; }
+
+            .top-bar { padding: 12px 16px; }
+
+            .clock { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-grid { grid-template-columns: 1fr; }
+            .product-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ============ ANIMATIONS ============ */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-content { animation: fadeIn 0.3s ease; }
+
+        /* ============ PRINT ============ */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-receipt, #printable-receipt * { visibility: visible; }
+            #printable-receipt {
+                position: absolute; left: 0; top: 0;
+                width: 80mm; font-family: monospace;
+                font-size: 12px; color: #000;
+                margin: 0; padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <h2>Para/Outlet</h2>
+            <p>Point of Sale & Inventory</p>
+
+            <div id="login-alert" class="login-alert">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                Invalid username or password
+            </div>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Username</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="username" placeholder="Enter username" value="admin" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" placeholder="Enter password" value="admin1234@#" required>
+                    </div>
+                </div>
+                <button type="submit" class="apple-btn apple-btn-primary" style="margin-top: 8px;">
+                    <i class="fa-solid fa-arrow-right"></i> Sign In
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>admin / admin1234@#</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-layout" class="d-none">
+
+        <!-- SIDEBAR OVERLAY (MOBILE) -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <!-- SIDEBAR -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><i class="fa-solid fa-store"></i></div>
+                <span class="sidebar-brand">Para/Outlet</span>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-label">Main</div>
+                <a class="nav-link active" data-page="dashboard" data-tooltip="Dashboard" onclick="switchPage('dashboard', this)">
+                    <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+                </a>
+                <a class="nav-link" data-page="pos-sale" data-tooltip="POS Sale" onclick="switchPage('pos-sale', this)">
+                    <i class="fa-solid fa-cart-shopping"></i><span>POS Sale</span>
+                </a>
+                <a class="nav-link" data-page="sale-report" data-tooltip="Sale Report" onclick="switchPage('sale-report', this)">
+                    <i class="fa-solid fa-chart-line"></i><span>Sale Report</span>
+                </a>
+                <a class="nav-link" data-page="product-category" data-tooltip="Categories" onclick="switchPage('product-category', this)">
+                    <i class="fa-solid fa-folder"></i><span>Categories</span>
+                </a>
+
+                <div class="nav-label" style="margin-top: 16px;">Management</div>
+                <a class="nav-link" data-page="vendor-board" data-tooltip="Vendors" onclick="switchPage('vendor-board', this)">
+                    <i class="fa-solid fa-truck"></i><span>Vendors</span>
+                </a>
+                <a class="nav-link" data-page="cash-ledger" data-tooltip="Cash Ledger" onclick="switchPage('cash-ledger', this)">
+                    <i class="fa-solid fa-wallet"></i><span>Cash Ledger</span>
+                </a>
+                <a class="nav-link" data-page="expense" data-tooltip="Expenses" onclick="switchPage('expense', this)">
+                    <i class="fa-solid fa-receipt"></i><span>Expenses</span>
+                </a>
+
+                <div class="nav-label" style="margin-top: 16px;">System</div>
+                <a class="nav-link" data-page="users" data-tooltip="Users" onclick="switchPage('users', this)">
+                    <i class="fa-solid fa-users"></i><span>Users</span>
+                </a>
+                <a class="nav-link" data-page="settings" data-tooltip="Settings" onclick="switchPage('settings', this)">
+                    <i class="fa-solid fa-gear"></i><span>Settings</span>
+                </a>
+            </div>
+            <div class="sidebar-footer">
+                <div class="theme-toggle" id="theme-toggle-row" onclick="toggleThemeFromRow()" title="Toggle Light / Dark">
+                    <div class="theme-toggle-label">
+                        <i class="fa-solid fa-circle-half-stroke"></i>
+                        <span>Dark Mode</span>
+                    </div>
+                    <label class="toggle-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="nav-link mode-toggle" data-tooltip="Dock / Lite" onclick="toggleSidebarMode()">
+                    <i class="fa-solid fa-angles-right icon-lite"></i>
+                    <i class="fa-solid fa-angles-left icon-dock"></i>
+                    <span>Dock Mode</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div id="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <span class="page-title" id="current-page-title">POS Terminal</span>
+                    <span class="status-badge">Register Open</span>
+                </div>
+                <div class="top-bar-right">
+                    <span class="clock" id="live-clock"></span>
+                    <div class="user-menu">
+                        <button class="user-btn" onclick="toggleUserMenu()">
+                            <div class="user-avatar">A</div>
+                            <span>Admin</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--text-tertiary)"></i>
+                        </button>
+                        <div class="dropdown-menu" id="user-dropdown">
+                            <button class="dropdown-item danger" onclick="logout()">
+                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-body">
+
+                <!-- 0. DASHBOARD -->
+                <section id="dashboard" class="page-content">
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fa-solid fa-sack-dollar"></i></div>
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-value" id="dash-revenue">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div class="stat-label">Today's Sales</div>
+                            <div class="stat-value" id="dash-today">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fa-solid fa-cart-flatbed"></i></div>
+                            <div class="stat-label">Orders</div>
+                            <div class="stat-value" id="dash-orders">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange"><i class="fa-solid fa-boxes-stacked"></i></div>
+                            <div class="stat-label">Products</div>
+                            <div class="stat-value" id="dash-products">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon teal"><i class="fa-solid fa-layer-group"></i></div>
+                            <div class="stat-label">Categories</div>
+                            <div class="stat-value" id="dash-categories">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fa-solid fa-truck-field"></i></div>
+                            <div class="stat-label">Vendors</div>
+                            <div class="stat-value" id="dash-vendors">0</div>
+                        </div>
+                    </div>
+                    <div class="dash-grid">
+                        <div class="apple-card">
+                            <div class="apple-card-header">
+                                <span class="apple-card-title">Inventory by Category</span>
+                            </div>
+                            <div id="dash-category-chart"></div>
+                        </div>
+                        <div class="apple-card">
+                            <div class="apple-card-header">
+                                <span class="apple-card-title">Recent Orders</span>
+                            </div>
+                            <div id="dash-recent-orders"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 1. POS SALE -->
+                <section id="pos-sale" class="page-content d-none">
+                    <div class="pos-window-bar">
+                        <span class="pos-window-title"><i class="fa-solid fa-store"></i> POS Terminal</span>
+                        <div class="pos-window-controls">
+                            <button class="win-btn" onclick="minPosSession()" title="Minimize">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <button class="win-btn" onclick="togglePosFullscreen()" title="Maximize">
+                                <i class="fa-solid fa-window-maximize"></i>
+                            </button>
+                            <button class="win-btn exit" onclick="exitPosSale()" title="Exit">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="pos-layout">
+                        <div>
+                            <div class="search-bar">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="search-product" placeholder="Search product by name, category...">
+                            </div>
+                            <div class="filter-pills" id="pos-category-filters"></div>
+                            <div class="product-grid" id="pos-product-list"></div>
+                        </div>
+                    </div>
+                    <!-- Live Board Editor Toggle -->
+                    <button class="pos-editor-toggle" id="pos-editor-toggle" onclick="togglePosEditor()">
+                        <i class="fa-solid fa-sliders"></i>
+                    </button>
+                    <!-- Live Board Editor Panel -->
+                    <div class="pos-editor-panel" id="pos-editor-panel">
+                        <div class="pos-editor-header">
+                            <span><i class="fa-solid fa-sliders"></i> Board Editor</span>
+                            <button class="pos-editor-close" onclick="togglePosEditor()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="pos-editor-body">
+                            <div class="pos-editor-row">
+                                <label>Board Width</label>
+                                <input type="range" id="pe-width" min="280" max="560" step="10" oninput="liveKeypadEdit()">
+                                <span id="pe-width-val">420px</span>
+                            </div>
+                            <div class="pos-editor-row">
+                                <label>Button Height</label>
+                                <input type="range" id="pe-height" min="36" max="90" step="2" oninput="liveKeypadEdit()">
+                                <span id="pe-height-val">68px</span>
+                            </div>
+                            <div class="pos-editor-row">
+                                <label>Font Size</label>
+                                <input type="range" id="pe-font" min="14" max="36" step="1" oninput="liveKeypadEdit()">
+                                <span id="pe-font-val">26px</span>
+                            </div>
+                            <div class="pos-editor-row">
+                                <label>Button Gap</label>
+                                <input type="range" id="pe-gap" min="4" max="18" step="1" oninput="liveKeypadEdit()">
+                                <span id="pe-gap-val">12px</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. SALE REPORT -->
+                <section id="sale-report" class="page-content d-none">
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fa-solid fa-dollar-sign"></i></div>
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-value" id="total-revenue-stat">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div class="stat-label">Today's Sales</div>
+                            <div class="stat-value" id="today-revenue-stat">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple"><i class="fa-solid fa-receipt"></i></div>
+                            <div class="stat-label">Average Ticket</div>
+                            <div class="stat-value" id="avg-ticket-stat">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="apple-card" style="margin-top:20px;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Daily Sales Summary</span>
+                        </div>
+                        <div id="daily-sales-summary"></div>
+                    </div>
+                    <div class="apple-card" style="margin-top:20px;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">All Orders</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>Invoice</th>
+                                        <th>Date</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Payment</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sales-history-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. PRODUCT CATEGORY -->
+                <section id="product-category" class="page-content d-none">
+                    <div class="apple-card">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Categories</span>
+                            <button class="apple-btn apple-btn-primary apple-btn-sm" onclick="addNewCategory()">
+                                <i class="fa-solid fa-plus"></i> Add Category
+                            </button>
+                        </div>
+                        <table class="apple-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Products</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="category-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="apple-card" style="margin-top:20px;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Products</span>
+                            <button class="apple-btn apple-btn-primary apple-btn-sm" onclick="addProduct()">
+                                <i class="fa-solid fa-plus"></i> Add Product
+                            </button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. VENDOR BOARD -->
+                <section id="vendor-board" class="page-content d-none">
+                    <div class="apple-card">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Registered Vendors</span>
+                            <button class="apple-btn apple-btn-primary apple-btn-sm" onclick="addVendor()">
+                                <i class="fa-solid fa-plus"></i> Add Vendor
+                            </button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Company</th>
+                                        <th>Contact</th>
+                                        <th>Balance</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendor-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+<!-- 5. CASH LEDGER -->
+                <section id="cash-ledger" class="page-content d-none">
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                            <div class="stat-label">Total Sales (Cash In)</div>
+                            <div class="stat-value" id="ledger-sales-stat">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                            <div class="stat-label">Total Expenses (Cash Out)</div>
+                            <div class="stat-value" id="ledger-expense-stat">$0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue"><i class="fa-solid fa-wallet"></i></div>
+                            <div class="stat-label">Net Balance</div>
+                            <div class="stat-value" id="ledger-net-stat">$0.00</div>
+                        </div>
+                    </div>
+                    <div class="apple-card" style="margin-top:20px;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Cash Ledger</span>
+                            <button class="apple-btn apple-btn-sm apple-btn-orange" onclick="cashInOut()">
+                                <i class="fa-solid fa-arrow-right-arrow-left"></i> Cash In / Out
+                            </button>
+                        </div>
+                        <table class="apple-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledger-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 6. EXPENSE -->
+                <section id="expense" class="page-content d-none">
+                    <div class="apple-card">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">Expenses</span>
+                            <button class="apple-btn apple-btn-sm apple-btn-danger" onclick="recordExpense()">
+                                <i class="fa-solid fa-plus"></i> Record Expense
+                            </button>
+                        </div>
+                        <table class="apple-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>By</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 7. USERS -->
+                <section id="users" class="page-content d-none">
+                    <div class="apple-card">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">System Users</span>
+                            <button class="apple-btn apple-btn-primary apple-btn-sm" onclick="addUser()">
+                                <i class="fa-solid fa-user-plus"></i> Add User
+                            </button>
+                        </div>
+                        <table class="apple-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 8. SETTINGS -->
+                <section id="settings" class="page-content d-none">
+                    <div class="apple-card" style="max-width:640px;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title">System Settings</span>
+                        </div>
+                        <form id="settings-form">
+                            <div class="form-group">
+                                <label>Store Name</label>
+                                <input type="text" class="form-input" id="set-store-name">
+                            </div>
+                            <div class="form-group">
+                                <label>Receipt Header</label>
+                                <input type="text" class="form-input" id="set-receipt-header">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Tax Rate (%)</label>
+                                    <input type="number" class="form-input" id="set-tax-rate">
+                                </div>
+                                <div class="form-group">
+                                    <label>Currency Symbol</label>
+                                    <input type="text" class="form-input" id="set-currency">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Products per Row</label>
+                                    <input type="number" class="form-input" id="set-pos-cols" min="3" max="12">
+                                    <small style="color:var(--text-tertiary);">Columns shown in POS sale grid</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Text Scale</label>
+                                    <input type="number" class="form-input" id="set-pos-scale" min="0.7" max="2" step="0.1">
+                                    <small style="color:var(--text-tertiary);">Bigger number = larger text in cards</small>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <label style="margin-bottom:2px;">POS Sale Print</label>
+                                    <small style="color:var(--text-tertiary);">Show the bill popup right after a sale</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="set-pos-print">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Product Image Size</label>
+                                    <input type="range" class="form-input" id="set-pos-card-h" min="120" max="300" step="10" style="accent-color:var(--blue);">
+                                    <small style="color:var(--text-tertiary);">Card height in px — bigger = image fills the whole cell</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Image Fill</label>
+                                    <select class="form-input" id="set-pos-img-fill">
+                                        <option value="cover">Cover — fills the whole cell</option>
+                                        <option value="contain">Contain — fit inside</option>
+                                    </select>
+                                    <small style="color:var(--text-tertiary);">How the product photo fills the card</small>
+                                </div>
+                            </div>
+                            <div style="margin:18px 0 6px;padding-top:16px;border-top:1px solid var(--border);font-size:14px;font-weight:700;color:var(--text-primary);">
+                                POS Keypad Editor
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Board Width (left-right)</label>
+                                    <input type="range" class="form-input" id="set-kp-w" min="280" max="560" step="10" style="accent-color:var(--blue);">
+                                    <small style="color:var(--text-tertiary);">Drag to widen or narrow the board</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Button Height</label>
+                                    <input type="range" class="form-input" id="set-kp-h" min="36" max="90" step="2" style="accent-color:var(--blue);">
+                                    <small style="color:var(--text-tertiary);">Taller = bigger board, shorter = compact</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Number / Font Size</label>
+                                    <input type="range" class="form-input" id="set-kp-font" min="14" max="36" step="1" style="accent-color:var(--blue);">
+                                    <small style="color:var(--text-tertiary);">Size of the digits on each key</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Button Gap</label>
+                                    <input type="range" class="form-input" id="set-kp-gap" min="4" max="18" step="1" style="accent-color:var(--blue);">
+                                    <small style="color:var(--text-tertiary);">Space between keys</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Button Color</label>
+                                    <select class="form-input" id="set-kp-color">
+                                        <option value="blue">Blue</option>
+                                        <option value="green">Green</option>
+                                        <option value="orange">Orange</option>
+                                        <option value="red">Red</option>
+                                        <option value="purple">Purple</option>
+                                        <option value="teal">Teal</option>
+                                    </select>
+                                    <small style="color:var(--text-tertiary);">Colour of C / backspace / dot keys</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Keypad Layout</label>
+                                    <select class="form-input" id="set-kp-layout">
+                                        <option value="calc">Calculator (7-8-9 top)</option>
+                                        <option value="phone">Phone (1-2-3 top)</option>
+                                    </select>
+                                    <small style="color:var(--text-tertiary);">Button order / navigation style</small>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <label style="margin-bottom:2px;">Center Keypad</label>
+                                    <small style="color:var(--text-tertiary);">Perfectly center the board on any device</small>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="set-kp-center">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <button class="apple-btn apple-btn-primary" type="submit">
+                                <i class="fa-solid fa-check"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+                    <div class="apple-card" style="max-width:640px;margin-top:20px;border:1px solid #DC2626;">
+                        <div class="apple-card-header">
+                            <span class="apple-card-title" style="color:#DC2626;">Danger Zone — Reset All Data</span>
+                        </div>
+                        <p style="font-size:13px;color:var(--text-tertiary);margin:0 0 12px;">
+                            This will permanently delete all products, categories, sales, expenses, vendors, users, cash ledger, and settings. Only the default admin accounts will remain.
+                        </p>
+                        <button class="apple-btn apple-btn-danger" onclick="resetAllData()">
+                            <i class="fa-solid fa-trash"></i> Reset Everything
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIPT MODAL -->
+    <div class="modal-backdrop-custom" id="receiptModal">
+        <div class="modal-box">
+            <div id="printable-receipt"></div>
+            <div class="modal-actions">
+                <button class="apple-btn apple-btn-outline" onclick="closeReceiptModal()">Close</button>
+                <button class="apple-btn apple-btn-primary" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK SELL KEYPAD MODAL (MONEY BASED) -->
+    <div class="modal-backdrop-custom" id="keypadModal" onclick="closeKeypad()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div id="kp-product"></div>
+            <div class="qty-display" id="kp-money">0</div>
+            <div class="keypad-qty-line" style="display:none;" id="kp-line">
+                <span>Quantity</span>
+                <b id="kp-qty">0</b>
+            </div>
+            <div class="keypad-grid" id="kp-grid">
+                <button class="keypad-btn" onclick="kpDigit('7')">7</button>
+                <button class="keypad-btn" onclick="kpDigit('8')">8</button>
+                <button class="keypad-btn" onclick="kpDigit('9')">9</button>
+                <button class="keypad-btn" onclick="kpDigit('4')">4</button>
+                <button class="keypad-btn" onclick="kpDigit('5')">5</button>
+                <button class="keypad-btn" onclick="kpDigit('6')">6</button>
+                <button class="keypad-btn" onclick="kpDigit('1')">1</button>
+                <button class="keypad-btn" onclick="kpDigit('2')">2</button>
+                <button class="keypad-btn" onclick="kpDigit('3')">3</button>
+                <button class="keypad-btn special" onclick="kpDigit('.')">.</button>
+                <button class="keypad-btn" onclick="kpDigit('0')">0</button>
+                <button class="keypad-btn special" onclick="kpDigit('00')">00</button>
+                <button class="keypad-btn special" onclick="kpClear()" title="Clear">C</button>
+                <button class="keypad-btn special" onclick="kpBackspace()" title="Backspace">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+                <button class="keypad-btn spacer" aria-hidden="true"></button>
+            </div>
+            <div class="sell-row">
+                <button class="apple-btn apple-btn-success keypad-sell" onclick="kpSell()">
+                    <i class="fa-solid fa-check"></i> Sell
+                </button>
+                <button class="apple-btn keypad-cancel" onclick="closeKeypad()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const DB_KEY = 'pos_db_v1';
+        const IDB_DB = 'ParaPOSDB';
+        const IDB_STORE = 'appState';
+        let state = null;
+        let idbReady = false;
+
+        /* IndexedDB wrapper — stronger than localStorage */
+        function openIDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_DB, 1);
+                req.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+                };
+                req.onsuccess = e => resolve(e.target.result);
+                req.onerror = e => reject(e);
+            });
+        }
+
+        async function idbSave(key, val) {
+            try {
+                const db = await openIDB();
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(val, key);
+            } catch (e) {}
+        }
+
+        async function idbLoad(key) {
+            try {
+                const db = await openIDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(IDB_STORE, 'readonly');
+                    const req = tx.objectStore(IDB_STORE).get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) { return null; }
+        }
+
+        function defaultState() {
+            return {
+                categories: [],
+                products: [],
+                salesHistory: [],
+                vendors: [],
+                cashLedger: [],
+                expenses: [],
+                users: [
+                    { name: "Main Administrator", username: "admin", role: "SuperAdmin", status: "Active" },
+                    { name: "Cashier Desk 1", username: "cashier1", role: "Cashier", status: "Active" }
+                ],
+                settings: { storeName: "Para/Outlet Store #1", receiptHeader: "123 Shopping Avenue, Commerce City", taxRate: 5, currency: "$", posCols: 7, posCardH: 170, posImgFill: "cover", posScale: 1, posPrint: false, kpWidth: 420, kpH: 68, kpFont: 26, kpGap: 12, kpColor: "blue", kpLayout: "calc", kpCenter: true }
+            };
+        }
+
+        function loadDB() {
+            try {
+                const raw = localStorage.getItem(DB_KEY);
+                const d = defaultState();
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    state = Object.assign(d, p);
+                    if (p.settings) state.settings = Object.assign(d.settings, p.settings);
+                    if (!('posCardH' in state.settings)) state.settings.posCardH = 170;
+                    if (!('posImgFill' in state.settings)) state.settings.posImgFill = "cover";
+                    if (!('posPrint' in state.settings)) state.settings.posPrint = false;
+                    if (!('kpWidth' in state.settings)) state.settings.kpWidth = 420;
+                    if (!('kpH' in state.settings)) state.settings.kpH = 68;
+                    if (!('kpFont' in state.settings)) state.settings.kpFont = 26;
+                    if (!('kpGap' in state.settings)) state.settings.kpGap = 12;
+                    if (!('kpColor' in state.settings)) state.settings.kpColor = "blue";
+                    if (!('kpLayout' in state.settings)) state.settings.kpLayout = "calc";
+                    if (!('kpCenter' in state.settings)) state.settings.kpCenter = true;
+                    state.products.forEach(pr => { if (!('image' in pr)) pr.image = ''; });
+                } else {
+                    state = d;
+                }
+                idbLoad(DB_KEY).then(d => { if (d) { state = Object.assign(defaultState(), d); if (d.settings) state.settings = Object.assign(defaultState().settings, d.settings); } });
+            } catch (e) {
+                state = defaultState();
+            }
+        }
+
+        function saveDB() {
+            state.categories = categories;
+            state.products = products;
+            state.salesHistory = salesHistory;
+            state.vendors = vendors;
+            state.cashLedger = cashLedger;
+            state.expenses = expenses;
+            state.users = users;
+            state.settings = settings;
+            localStorage.setItem(DB_KEY, JSON.stringify(state));
+            idbSave(DB_KEY, state);
+        }
+
+        loadDB();
+
+        let categories = state.categories;
+        let products = state.products;
+        let salesHistory = state.salesHistory;
+        let vendors = state.vendors;
+        let cashLedger = state.cashLedger;
+        let expenses = state.expenses;
+        let users = state.users;
+        let settings = state.settings;
+
+        function fmt(n) { return settings.currency + Number(n).toFixed(2); }
+        function taxRate() { return (Number(settings.taxRate) || 0) / 100; }
+
+        // Theme
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = document.getElementById('theme-toggle').checked;
+            html.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function toggleThemeFromRow() {
+            const el = document.getElementById('theme-toggle');
+            el.checked = !el.checked;
+            el.dispatchEvent(new Event('change'));
+        }
+
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('theme-toggle').checked = true;
+            }
+            const mode = localStorage.getItem('sidebarMode');
+            if (mode === 'dock') {
+                document.body.setAttribute('data-sidebar-mode', 'dock');
+            }
+        })();
+
+        // Sidebar mode (Dock / Lite)
+        function toggleSidebarMode() {
+            if (document.body.getAttribute('data-sidebar-mode') === 'dock') {
+                document.body.removeAttribute('data-sidebar-mode');
+                localStorage.setItem('sidebarMode', 'lite');
+            } else {
+                document.body.setAttribute('data-sidebar-mode', 'dock');
+                localStorage.setItem('sidebarMode', 'dock');
+            }
+        }
+
+        // Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        // User menu
+        function toggleUserMenu() {
+            document.getElementById('user-dropdown').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            const menu = document.querySelector('.user-menu');
+            if (menu && !menu.contains(e.target)) {
+                document.getElementById('user-dropdown').classList.remove('show');
+            }
+        });
+
+        // Auth
+        let currentUser = null;
+        const SESSION_KEY = 'pos_session';
+
+        function autoLogin() {
+            try {
+                const s = localStorage.getItem(SESSION_KEY);
+                if (s) {
+                    const sess = JSON.parse(s);
+                    const u = users.find(x => x.username === sess.username && x.status === 'Active');
+                    if (u) { doLogin(u); return true; }
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const user = users.find(x => x.username === u && x.status === 'Active');
+            if (user && (u === 'admin' && p === 'admin1234@#') || (user.role === 'Cashier' && p === 'cashier123')) {
+                doLogin(user);
+            } else {
+                document.getElementById('login-alert').classList.add('show');
+            }
+        });
+
+        function doLogin(user) {
+            currentUser = user;
+            localStorage.setItem(SESSION_KEY, JSON.stringify({ username: user.username }));
+            document.getElementById('login-screen').classList.add('d-none');
+            document.getElementById('app-layout').classList.remove('d-none');
+            document.getElementById('login-alert').classList.remove('show');
+            applyRoleRestrictions();
+            initApp();
+        }
+
+        function applyRoleRestrictions() {
+            if (!currentUser) return;
+            const isAdmin = currentUser.role === 'SuperAdmin';
+            document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+                const page = link.getAttribute('data-page');
+                if (isAdmin) {
+                    link.style.display = '';
+                } else {
+                    const cashierPages = ['pos-sale'];
+                    link.style.display = cashierPages.includes(page) ? '' : 'none';
+                }
+            });
+            document.querySelectorAll('.sidebar-nav .nav-label').forEach(lbl => {
+                lbl.style.display = isAdmin ? '' : 'none';
+            });
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem(SESSION_KEY);
+            document.getElementById('login-screen').classList.remove('d-none');
+            document.getElementById('app-layout').classList.add('d-none');
+            document.getElementById('login-alert').classList.remove('show');
+            document.getElementById('user-dropdown').classList.remove('show');
+        }
+
+        // Clock
+        function updateClock() {
+            document.getElementById('live-clock').innerText = new Date().toLocaleString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Page switch
+        function switchPage(pageId, el) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('d-none'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.remove('d-none');
+            el.classList.add('active');
+            document.getElementById('current-page-title').innerText = el.textContent.trim();
+
+            if (pageId === 'pos-sale') startPosSession();
+            else exitPosSession();
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
+        }
+
+        // Init
+        function initApp() {
+            renderCategories();
+            renderProducts(products);
+            renderSalesHistory();
+            renderDashboard();
+            renderCategoryTable();
+            renderProductsTable();
+            renderVendors();
+            renderLedger();
+            renderExpenses();
+            renderUsers();
+            loadSettingsForm();
+            saveDB();
+            goDashboard();
+        }
+
+        function renderCategories() {
+            const c = document.getElementById('pos-category-filters');
+            const pills = [
+                `<button class="filter-pill active" onclick="filterCategory('All', this)">All</button>`,
+                ...categories.map(cat => `<button class="filter-pill" onclick="filterCategory('${cat}', this)">${cat}</button>`)
+            ];
+            c.innerHTML = pills.join('');
+        }
+
+        function renderProducts(items) {
+            const c = document.getElementById('pos-product-list');
+            c.innerHTML = items.map(p => `
+                <div class="product-card" onclick="openProductPicker(${p.id})">
+                    ${p.image
+                        ? `<img class="product-img" src="${p.image}" onerror="this.style.display='none'">`
+                        : `<div class="product-icon"><i class="fa-solid ${p.icon}"></i></div>`}
+                    <div class="product-meta">
+                        <div class="product-name">${p.name}</div>
+                        <div class="product-category">${p.category}</div>
+                        <div class="product-price">${fmt(p.price)}</div>
+                    </div>
+                </div>
+            `).join('');
+            applyPosLayout();
+        }
+
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProducts(cat === "All" ? products : products.filter(p => p.category === cat));
+        }
+
+        document.getElementById('search-product').addEventListener('input', function(e) {
+            const q = e.target.value.toLowerCase();
+            renderProducts(products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)));
+        });
+
+        // POS fullscreen session
+        function startPosSession() {
+            if (window.innerWidth > 768) {
+                document.body.classList.add('pos-fullscreen');
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(function() {});
+                }
+            }
+        }
+
+        function exitPosSession() {
+            document.body.classList.remove('pos-fullscreen');
+            if (document.fullscreenElement) document.exitFullscreen();
+        }
+
+        function minPosSession() { exitPosSession(); }
+
+        function togglePosFullscreen() {
+            if (document.fullscreenElement) document.exitFullscreen();
+            else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function() {});
+        }
+
+        function exitPosSale() {
+            exitPosSession();
+            goDashboard();
+        }
+
+        // Quick sell keypad (money based)
+        let pickerProduct = null;
+        let kpMoneyInput = '';
+
+        function openProductPicker(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            pickerProduct = p;
+            kpMoneyInput = '';
+            renderPicker();
+            document.getElementById('keypadModal').classList.add('show');
+        }
+
+        function renderPicker() {
+            if (!pickerProduct) return;
+            const p = pickerProduct;
+            const amount = kpMoneyInput === '' ? 0 : parseFloat(kpMoneyInput);
+            const qty = (amount > 0 && p.price > 0) ? Math.round(amount / p.price * 1000) / 1000 : 0;
+            const img = p.image ? `<img src="${p.image}" onerror="this.style.display='none'">` : '';
+            document.getElementById('kp-product').innerHTML = `
+                <div class="keypad-product">
+                    ${img}
+                    <div class="keypad-product-name">${p.name}</div>
+                    <div class="keypad-product-price">${fmt(p.price)} / ${settings.currency}</div>
+                </div>
+            `;
+            document.getElementById('kp-money').innerText = kpMoneyInput === '' ? '0' : kpMoneyInput;
+            document.getElementById('kp-line').style.display = amount > 0 ? 'flex' : 'none';
+            document.getElementById('kp-qty').innerText = qty > 0 ? qty : '0';
+        }
+
+        function kpDigit(d) {
+            if (kpMoneyInput.replace('.', '').length >= 7) return;
+            if (d === '.') {
+                if (kpMoneyInput === '' || kpMoneyInput.includes('.')) return;
+                kpMoneyInput += '.';
+            } else if (d === '00') {
+                if (kpMoneyInput === '' || kpMoneyInput === '0' || kpMoneyInput.includes('.')) return;
+                kpMoneyInput += '00';
+            } else {
+                if (kpMoneyInput === '0') kpMoneyInput = '';
+                kpMoneyInput += d;
+            }
+            renderPicker();
+        }
+
+        function kpBackspace() {
+            kpMoneyInput = kpMoneyInput.slice(0, -1);
+            renderPicker();
+        }
+
+        function kpClear() {
+            kpMoneyInput = '';
+            renderPicker();
+        }
+
+        function kpSell() {
+            if (!pickerProduct) return;
+            const amount = parseFloat(kpMoneyInput);
+            if (!amount || isNaN(amount) || amount <= 0) return;
+            const p = pickerProduct;
+            const qty = Math.round(amount / p.price * 1000) / 1000;
+            const invId = "INV-" + Math.floor(1000 + Math.random() * 9000);
+            const now = new Date().toLocaleString();
+            const tax = amount * taxRate();
+            const total = amount + tax;
+            const cashier = currentUser ? currentUser.name : 'Admin';
+
+            salesHistory.unshift({ invoice: invId, date: now, itemsCount: 1, total, payment: "Cash", cashier });
+            cashLedger.unshift({ time: now, description: 'Sale ' + invId + ' - ' + p.name, type: 'Sales', amount: total });
+            renderSalesHistory();
+            renderDashboard();
+            renderLedger();
+            saveDB();
+
+            document.getElementById('printable-receipt').innerHTML = `
+                <div class="receipt-header">
+                    <h4>${settings.storeName}</h4>
+                    <p>${settings.receiptHeader}</p>
+                </div>
+                <hr style="border:none;border-top:1px dashed var(--gray3);margin:12px 0;">
+                <div style="font-size:13px;margin-bottom:12px;">
+                    <div><b>Invoice:</b> ${invId}</div>
+                    <div><b>Date:</b> ${now}</div>
+                    <div><b>Cashier:</b> ${cashier}</div>
+                </div>
+                <hr style="border:none;border-top:1px dashed var(--gray3);margin:12px 0;">
+                <table style="width:100%;font-size:13px;margin-bottom:12px;">
+                    <tr><td>${p.name} x${qty}</td><td style="text-align:right;">${fmt(amount)}</td></tr>
+                </table>
+                <hr style="border:none;border-top:1px dashed var(--gray3);margin:12px 0;">
+                <div style="font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;"><span>Subtotal:</span><span>${fmt(amount)}</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span>Tax ${settings.taxRate}%:</span><span>${fmt(tax)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin-top:8px;"><span>Total:</span><span>${fmt(total)}</span></div>
+                </div>
+                <hr style="border:none;border-top:1px dashed var(--gray3);margin:12px 0;">
+                <p style="text-align:center;font-size:12px;color:var(--text-tertiary);">Thank you for shopping!</p>
+            `;
+
+            if (settings.posPrint) {
+                document.getElementById('receiptModal').classList.add('show');
+            } else {
+                toast('Sale complete - ' + p.name + ' ' + fmt(amount));
+            }
+            closeKeypad();
+        }
+
+        function closeKeypad() {
+            document.getElementById('keypadModal').classList.remove('show');
+            pickerProduct = null;
+            kpMoneyInput = '';
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.remove('show');
+        }
+
+        // Reports
+        function renderSalesHistory() {
+            const t = document.getElementById('sales-history-tbody');
+            t.innerHTML = salesHistory.map(s => `
+                <tr>
+                    <td class="fw-semibold">${s.invoice}</td>
+                    <td>${s.date}</td>
+                    <td>${s.itemsCount} items</td>
+                    <td><span class="apple-badge apple-badge-blue">${fmt(s.total)}</span></td>
+                    <td><span class="apple-badge apple-badge-gray">${s.payment}</span></td>
+                </tr>
+            `).join('');
+            const rev = salesHistory.reduce((a, s) => a + s.total, 0);
+            document.getElementById('total-revenue-stat').innerText = fmt(rev);
+            document.getElementById('avg-ticket-stat').innerText = salesHistory.length ? fmt(rev / salesHistory.length) : fmt(0);
+            const todayStr = new Date().toLocaleDateString();
+            const todayRev = salesHistory.filter(s => s.date && s.date.includes(todayStr)).reduce((a, s) => a + s.total, 0);
+            document.getElementById('today-revenue-stat').innerText = fmt(todayRev);
+            renderDailySalesSummary();
+        }
+
+        function renderDailySalesSummary() {
+            const el = document.getElementById('daily-sales-summary');
+            if (!el) return;
+            const grouped = {};
+            salesHistory.forEach(s => {
+                const d = s.date ? s.date.split(',')[0].trim() : 'Unknown';
+                if (!grouped[d]) grouped[d] = { total: 0, count: 0 };
+                grouped[d].total += s.total;
+                grouped[d].count++;
+            });
+            const days = Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]));
+            if (days.length === 0) { el.innerHTML = '<div class="dash-empty">No sales yet</div>'; return; }
+            el.innerHTML = days.map(([date, data]) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);">
+                    <div>
+                        <div style="font-weight:600;color:var(--text-primary);">${date}</div>
+                        <div style="font-size:12px;color:var(--text-tertiary);">${data.count} order${data.count > 1 ? 's' : ''}</div>
+                    </div>
+                    <span class="apple-badge apple-badge-blue">${fmt(data.total)}</span>
+                </div>
+            `).join('');
+        }
+
+        // Dashboard
+        function renderDashboard() {
+            const rev = salesHistory.reduce((a, s) => a + s.total, 0);
+            const todayStr = new Date().toLocaleDateString();
+            const todayRev = salesHistory.filter(s => s.date && s.date.includes(todayStr)).reduce((a, s) => a + s.total, 0);
+            document.getElementById('dash-revenue').innerText = fmt(rev);
+            document.getElementById('dash-today').innerText = fmt(todayRev);
+            document.getElementById('dash-orders').innerText = salesHistory.length;
+            document.getElementById('dash-products').innerText = products.length;
+            document.getElementById('dash-categories').innerText = categories.length;
+            document.getElementById('dash-vendors').innerText = vendors.length;
+            renderCategoryBars();
+            renderRecentOrders();
+        }
+
+        function renderCategoryBars() {
+            const el = document.getElementById('dash-category-chart');
+            const counts = categories.map(c => ({ name: c, n: products.filter(p => p.category === c).length }));
+            const max = Math.max(1, ...counts.map(c => c.n));
+            const colors = ['var(--blue)', 'var(--teal)', 'var(--orange)', 'var(--purple)', 'var(--green)', 'var(--red)'];
+            el.innerHTML = counts.map((c, i) => `
+                <div class="chart-row">
+                    <span class="chart-label">${c.name}</span>
+                    <div class="chart-track"><div class="chart-fill" style="width:${Math.round(c.n / max * 100)}%;background:${colors[i % colors.length]};"></div></div>
+                    <span class="chart-val">${c.n}</span>
+                </div>
+            `).join('') || '<div class="dash-empty">No categories yet</div>';
+        }
+
+        function renderRecentOrders() {
+            const el = document.getElementById('dash-recent-orders');
+            const recent = salesHistory.slice(0, 5);
+            el.innerHTML = recent.length ? recent.map(s => `
+                <div class="dash-order">
+                    <div class="dash-order-info">
+                        <b>${s.invoice}</b>
+                        <span class="dash-order-date">${s.date} · ${s.payment}</span>
+                    </div>
+                    <span class="dash-order-amount">${fmt(s.total)}</span>
+                </div>
+            `).join('') : '<div class="dash-empty">No orders yet</div>';
+        }
+
+        function goDashboard() {
+            const link = document.querySelector('.nav-link[data-page="dashboard"]');
+            if (link) switchPage('dashboard', link);
+        }
+
+        // Category table
+        function renderCategoryTable() {
+            const t = document.getElementById('category-table-body');
+            t.innerHTML = categories.map((c, i) => `
+                <tr>
+                    <td class="fw-semibold">${'#CAT-' + String(i+1).padStart(3, '0')}</td>
+                    <td>${c}</td>
+                    <td>${products.filter(p => p.category === c).length} items</td>
+                    <td>
+                        <button class="apple-btn apple-btn-sm apple-btn-outline" onclick="editCategoryName('${c}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="apple-btn apple-btn-sm apple-btn-danger" onclick="deleteCategory('${c}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addNewCategory() {
+            const n = prompt("Enter category name:");
+            if (n && n.trim() && !categories.includes(n.trim())) {
+                categories.push(n.trim());
+                saveDB();
+                renderCategories();
+                renderCategoryTable();
+            }
+        }
+
+        function editCategoryName(oldName) {
+            const n = prompt("Rename category:", oldName);
+            if (n && n.trim() && n.trim() !== oldName && !categories.includes(n.trim())) {
+                const idx = categories.indexOf(oldName);
+                if (idx > -1) {
+                    categories[idx] = n.trim();
+                    products.forEach(p => { if (p.category === oldName) p.category = n.trim(); });
+                }
+                saveDB();
+                renderCategories();
+                renderCategoryTable();
+                renderProducts(products);
+            }
+        }
+
+        function deleteCategory(name) {
+            if (!confirm('Delete category "' + name + '"?')) return;
+            const idx = categories.indexOf(name);
+            if (idx > -1) categories.splice(idx, 1);
+            saveDB();
+            renderCategories();
+            renderCategoryTable();
+            renderProducts(products);
+        }
+
+        // Products management
+        function renderProductsTable() {
+            const t = document.getElementById('products-table-body');
+            t.innerHTML = products.map(p => `
+                <tr>
+                    <td>${p.image
+                        ? `<img class="prod-thumb" src="${p.image}" onerror="this.style.display='none'">`
+                        : `<i class="fa-solid fa-cube prod-thumb-icon"></i>`}</td>
+                    <td class="fw-semibold">${p.name}</td>
+                    <td><span class="apple-badge apple-badge-gray">${p.category}</span></td>
+                    <td>${fmt(p.price)}</td>
+                    <td>
+                        <button class="apple-btn apple-btn-sm apple-btn-outline" onclick="editProduct(${p.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="apple-btn apple-btn-sm apple-btn-danger" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function nextProductId() {
+            return products.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+        }
+
+        function addProduct() {
+            const name = prompt("Product name:");
+            if (!name || !name.trim()) return;
+            const price = Number(prompt("Price:") || 0);
+            const cat = prompt("Category (" + categories.join(", ") + "):") || categories[0] || "General";
+            if (cat && !categories.includes(cat)) categories.push(cat);
+            const image = prompt("Image URL (paste link or leave empty):") || '';
+            products.push({ id: nextProductId(), name: name.trim(), price, category: cat, icon: "fa-cube", image });
+            saveDB();
+            renderCategories();
+            renderProducts(products);
+            renderCategoryTable();
+            renderProductsTable();
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const name = prompt("Product name:", p.name);
+            if (name === null || !name.trim()) return;
+            const price = Number(prompt("Price:", p.price));
+            const cat = prompt("Category:", p.category) || p.category;
+            if (!categories.includes(cat)) categories.push(cat);
+            const image = prompt("Image URL:", p.image);
+            p.name = name.trim();
+            p.price = price;
+            p.category = cat;
+            p.image = image;
+            saveDB();
+            renderCategories();
+            renderProducts(products);
+            renderCategoryTable();
+            renderProductsTable();
+        }
+
+        function deleteProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p || !confirm('Delete product "' + p.name + '"?')) return;
+            products = products.filter(x => x.id !== id);
+            saveDB();
+            renderProducts(products);
+            renderProductsTable();
+        }
+
+        // Vendors
+        function renderVendors() {
+            const t = document.getElementById('vendor-table-body');
+            t.innerHTML = vendors.map(v => `
+                <tr>
+                    <td class="fw-semibold">#${v.id}</td>
+                    <td>${v.company}</td>
+                    <td>${v.contact}</td>
+                    <td><span class="apple-badge ${v.balance > 0 ? 'apple-badge-red' : 'apple-badge-green'}">${fmt(v.balance)}</span></td>
+                    <td><button class="apple-btn apple-btn-sm apple-btn-outline" onclick="payVendor('${v.id}')">Pay</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function payVendor(id) {
+            const v = vendors.find(x => x.id === id);
+            if (!v) return;
+            const amt = prompt("Enter payment amount:", v.balance);
+            if (amt !== null && Number(amt) > 0) {
+                v.balance = Math.max(0, v.balance - Number(amt));
+                saveDB();
+                renderVendors();
+                renderLedger();
+            }
+        }
+
+        function addVendor() {
+            const company = prompt("Vendor / company name:");
+            if (!company || !company.trim()) return;
+            const contact = prompt("Contact number:") || "-";
+            const balance = Number(prompt("Opening balance:") || 0) || 0;
+            const id = 'VEN-' + String(vendors.length + 1).padStart(3, '0');
+            vendors.push({ id, company: company.trim(), contact, balance });
+            saveDB();
+            renderVendors();
+        }
+
+        function cashInOut() {
+            const typeChoice = prompt("Type (1 = Cash In, 2 = Cash Out):");
+            const type = typeChoice === '2' ? 'Cash Out' : 'Cash In';
+            const description = prompt("Description:") || "Manual entry";
+            const amount = Number(prompt("Amount:")) || 0;
+            const signed = type === 'Cash Out' ? -Math.abs(amount) : Math.abs(amount);
+            cashLedger.push({ time: new Date().toLocaleString(), description, type, amount: signed });
+            saveDB();
+            renderLedger();
+            renderDashboard();
+        }
+
+        function recordExpense() {
+            const title = prompt("Expense title:");
+            if (!title || !title.trim()) return;
+            const category = prompt("Category (e.g. Supplies, Utilities):") || "Other";
+            const amount = Number(prompt("Amount:")) || 0;
+            const now = new Date().toLocaleString();
+            expenses.push({ date: now, title: title.trim(), category, amount, by: currentUser ? currentUser.name : "Admin" });
+            cashLedger.push({ time: now, description: title.trim() + ' (' + category + ')', type: 'Expense', amount: -Math.abs(amount) });
+            saveDB();
+            renderExpenses();
+            renderLedger();
+            renderDashboard();
+        }
+
+        function addUser() {
+            const name = prompt("Full name:");
+            if (!name || !name.trim()) return;
+            const username = prompt("Username:") || name.trim().toLowerCase().replace(/\s+/g, '');
+            const role = prompt("Role (SuperAdmin / Cashier):") || "Cashier";
+            users.push({ name: name.trim(), username, role, status: "Active" });
+            saveDB();
+            renderUsers();
+        }
+
+        // Cash Ledger
+        function renderLedger() {
+            const t = document.getElementById('ledger-table-body');
+            const allEntries = [];
+            salesHistory.forEach(s => {
+                allEntries.push({ time: s.date, description: 'Sale ' + s.invoice, type: 'Sales', amount: s.total });
+            });
+            expenses.forEach(e => {
+                allEntries.push({ time: e.date, description: e.title + ' (' + e.category + ')', type: 'Expense', amount: -e.amount });
+            });
+            cashLedger.forEach(c => {
+                allEntries.push({ time: c.time, description: c.description, type: c.type, amount: c.amount });
+            });
+            allEntries.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+            t.innerHTML = allEntries.map(row => `
+                <tr>
+                    <td>${row.time}</td>
+                    <td>${row.description}</td>
+                    <td><span class="apple-badge ${row.amount >= 0 ? 'apple-badge-green' : 'apple-badge-red'}">${row.type}</span></td>
+                    <td><span class="apple-badge ${row.amount >= 0 ? 'apple-badge-green' : 'apple-badge-red'}">${row.amount >= 0 ? '+' : ''}${fmt(Math.abs(row.amount))}</span></td>
+                </tr>
+            `).join('');
+            const totalSales = salesHistory.reduce((a, s) => a + s.total, 0);
+            const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
+            const net = totalSales - totalExpenses;
+            document.getElementById('ledger-sales-stat').innerText = fmt(totalSales);
+            document.getElementById('ledger-expense-stat').innerText = fmt(totalExpenses);
+            document.getElementById('ledger-net-stat').innerText = fmt(net);
+        }
+
+        // Expenses
+        function renderExpenses() {
+            const t = document.getElementById('expense-table-body');
+            t.innerHTML = expenses.map(e => `
+                <tr>
+                    <td>${e.date}</td>
+                    <td>${e.title}</td>
+                    <td><span class="apple-badge apple-badge-gray">${e.category}</span></td>
+                    <td><span class="apple-badge apple-badge-red">${fmt(e.amount)}</span></td>
+                    <td>${e.by}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Users
+        function renderUsers() {
+            const t = document.getElementById('users-table-body');
+            t.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.name}</td>
+                    <td><code style="background:var(--input-bg);padding:2px 8px;border-radius:4px;font-size:13px;">${u.username}</code></td>
+                    <td><span class="apple-badge ${u.role === 'SuperAdmin' ? 'apple-badge-blue' : 'apple-badge-gray'}">${u.role}</span></td>
+                    <td><span class="apple-badge ${u.status === 'Active' ? 'apple-badge-green' : 'apple-badge-red'}">${u.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Settings
+        function loadSettingsForm() {
+            document.getElementById('set-store-name').value = settings.storeName;
+            document.getElementById('set-receipt-header').value = settings.receiptHeader;
+            document.getElementById('set-tax-rate').value = settings.taxRate;
+            document.getElementById('set-currency').value = settings.currency;
+            document.getElementById('set-pos-cols').value = settings.posCols;
+            document.getElementById('set-pos-card-h').value = settings.posCardH || 170;
+            document.getElementById('set-pos-img-fill').value = settings.posImgFill || "cover";
+            document.getElementById('set-pos-scale').value = settings.posScale;
+            document.getElementById('set-pos-print').checked = !!settings.posPrint;
+            document.getElementById('set-kp-w').value = settings.kpWidth || 420;
+            document.getElementById('set-kp-h').value = settings.kpH || 68;
+            document.getElementById('set-kp-font').value = settings.kpFont || 26;
+            document.getElementById('set-kp-gap').value = settings.kpGap || 12;
+            document.getElementById('set-kp-color').value = settings.kpColor || "blue";
+            document.getElementById('set-kp-layout').value = settings.kpLayout || "calc";
+            document.getElementById('set-kp-center').checked = settings.kpCenter !== false;
+            applyPosLayout();
+            applyKeypadStyles();
+        }
+
+        function applyPosLayout() {
+            const list = document.getElementById('pos-product-list');
+            if (!list) return;
+            list.style.setProperty('--pos-cols', settings.posCols || 7);
+            list.style.setProperty('--pos-scale', settings.posScale || 1);
+            list.style.setProperty('--pos-card-h', (settings.posCardH || 170) + 'px');
+            list.style.setProperty('--pos-img-fill', settings.posImgFill || "cover");
+        }
+
+        const KP_COLORS = {
+            blue: '#2563EB',
+            green: '#16A34A',
+            orange: '#F59E0B',
+            red: '#DC2626',
+            purple: '#7C3AED',
+            teal: '#0D9488'
+        };
+
+        function applyKeypadStyles() {
+            const m = document.getElementById('keypadModal');
+            if (!m) return;
+            m.style.setProperty('--kp-w', (settings.kpWidth || 420) + 'px');
+            m.style.setProperty('--kp-h', (settings.kpH || 68) + 'px');
+            m.style.setProperty('--kp-font', (settings.kpFont || 26) + 'px');
+            m.style.setProperty('--kp-gap', (settings.kpGap || 12) + 'px');
+            m.style.setProperty('--kp-accent', KP_COLORS[settings.kpColor] || KP_COLORS.blue);
+            m.classList.toggle('kp-center-off', settings.kpCenter === false);
+            renderKeypadGrid();
+        }
+
+        function renderKeypadGrid() {
+            const grid = document.getElementById('kp-grid');
+            if (!grid) return;
+            const calcMode = settings.kpLayout === 'calc';
+            const rows = calcMode
+                ? [['7','8','9'],['4','5','6'],['1','2','3'],['.','0','00'],['C','BS','space']]
+                : [['1','2','3'],['4','5','6'],['7','8','9'],['.','0','00'],['C','BS','space']];
+            grid.innerHTML = rows.flat().map(k => {
+                if (k === 'space') return '<button class="keypad-btn spacer" aria-hidden="true"></button>';
+                if (k === 'C') return '<button class="keypad-btn special" onclick="kpClear()" title="Clear">C</button>';
+                if (k === 'BS') return '<button class="keypad-btn special" onclick="kpBackspace()" title="Backspace"><i class="fa-solid fa-delete-left"></i></button>';
+                const cls = (k === '.' || k === '00') ? 'keypad-btn special' : 'keypad-btn';
+                return `<button class="${cls}" onclick="kpDigit('${k}')">${k}</button>`;
+            }).join('');
+        }
+
+        /* Live Board Editor Panel */
+        function togglePosEditor() {
+            const p = document.getElementById('pos-editor-panel');
+            p.classList.toggle('open');
+            if (p.classList.contains('open')) syncPosEditor();
+        }
+
+        function syncPosEditor() {
+            document.getElementById('pe-width').value = settings.kpWidth || 420;
+            document.getElementById('pe-height').value = settings.kpH || 68;
+            document.getElementById('pe-font').value = settings.kpFont || 26;
+            document.getElementById('pe-gap').value = settings.kpGap || 12;
+            document.getElementById('pe-width-val').innerText = (settings.kpWidth || 420) + 'px';
+            document.getElementById('pe-height-val').innerText = (settings.kpH || 68) + 'px';
+            document.getElementById('pe-font-val').innerText = (settings.kpFont || 26) + 'px';
+            document.getElementById('pe-gap-val').innerText = (settings.kpGap || 12) + 'px';
+        }
+
+        function liveKeypadEdit() {
+            settings.kpWidth = Number(document.getElementById('pe-width').value) || 420;
+            settings.kpH = Number(document.getElementById('pe-height').value) || 68;
+            settings.kpFont = Number(document.getElementById('pe-font').value) || 26;
+            settings.kpGap = Number(document.getElementById('pe-gap').value) || 12;
+            document.getElementById('pe-width-val').innerText = settings.kpWidth + 'px';
+            document.getElementById('pe-height-val').innerText = settings.kpH + 'px';
+            document.getElementById('pe-font-val').innerText = settings.kpFont + 'px';
+            document.getElementById('pe-gap-val').innerText = settings.kpGap + 'px';
+            applyKeypadStyles();
+            saveDB();
+        }
+
+function saveSettings() {
+            settings.storeName = document.getElementById('set-store-name').value;
+            settings.receiptHeader = document.getElementById('set-receipt-header').value;
+            settings.taxRate = Number(document.getElementById('set-tax-rate').value) || 0;
+            settings.currency = document.getElementById('set-currency').value || '$';
+            settings.posCols = Number(document.getElementById('set-pos-cols').value) || 7;
+            settings.posScale = Number(document.getElementById('set-pos-scale').value) || 1;
+            settings.posPrint = document.getElementById('set-pos-print').checked;
+            settings.posCardH = Number(document.getElementById('set-pos-card-h').value) || 170;
+            settings.posImgFill = document.getElementById('set-pos-img-fill').value || 'cover';
+            settings.kpWidth = Number(document.getElementById('set-kp-w').value) || 420;
+            settings.kpH = Number(document.getElementById('set-kp-h').value) || 68;
+            settings.kpFont = Number(document.getElementById('set-kp-font').value) || 26;
+            settings.kpGap = Number(document.getElementById('set-kp-gap').value) || 12;
+            settings.kpColor = document.getElementById('set-kp-color').value || 'blue';
+            settings.kpLayout = document.getElementById('set-kp-layout').value || "calc";
+            settings.kpCenter = document.getElementById('set-kp-center').checked;
+            saveDB();
+            applyPosLayout();
+            applyKeypadStyles();
+            toast('Settings saved');
+        }
+
+        function resetAllData() {
+            if (!confirm('Are you sure? ALL data will be permanently deleted!')) return;
+            if (!confirm('This cannot be undone. Proceed?')) return;
+            localStorage.removeItem(DB_KEY);
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem('sidebarMode');
+            try {
+                indexedDB.deleteDatabase(IDB_DB);
+            } catch (e) {}
+            toast('All data cleared. Reloading...');
+            setTimeout(() => location.reload(), 800);
+        }
+
+        function toast(msg) {
+            const el = document.createElement('div');
+            el.textContent = msg;
+            el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9500;background:var(--text-primary);color:var(--bg-primary);padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);animation:fadeIn 0.25s ease;';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 2000);
+        }
+
+        var settingsForm = document.getElementById('settings-form');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings();
+            });
+        }
+
+        if (!autoLogin()) {
+            document.getElementById('login-screen').classList.remove('d-none');
+        }
+    </script>
+</body>
+</html>
