@@ -1213,6 +1213,11 @@
                 <span id="login-alert-text">Invalid email or password</span>
             </div>
 
+            <div id="cloud-status" class="login-alert d-none" style="background:var(--input-bg);color:var(--text-primary);border:1px solid var(--border-color);color:#ffb700;cursor:pointer;" title="Tap to check again" onclick="checkCloudStatus()">
+                <i class="fa-solid fa-cloud"></i>
+                <span id="cloud-status-text">Checking Firebase connection...</span>
+            </div>
+
             <form id="login-form">
                 <div class="input-group">
                     <label>Email</label>
@@ -1872,8 +1877,11 @@
 
         let db = null;
         let auth = null;
+        let fbAppInit = false;
+        let fbStatus = { sdk: true, err: null };
         try {
             firebase.initializeApp(firebaseConfig);
+            fbAppInit = true;
             db = firebase.firestore();
             auth = firebase.auth();
             db.enableIndexedDbPersistence().catch(function(err) {
@@ -1884,6 +1892,91 @@
         } catch (e) {
             db = null;
             auth = null;
+            fbStatus = { sdk: !!(window.firebase), err: e ? e.message : 'unknown init error' };
+        }
+
+        function initFirebaseOnce() {
+            if (db && auth) return true;
+            if (!window.firebase) return false;
+            try {
+                if (!fbAppInit) { firebase.initializeApp(firebaseConfig); fbAppInit = true; }
+                db = firebase.firestore();
+                auth = firebase.auth();
+                if (db && auth) {
+                    db.enableIndexedDbPersistence().catch(function(err) {
+                        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+                            console.warn('Firestore offline persistence unavailable:', err);
+                        }
+                    });
+                }
+                return !!(db && auth);
+            } catch (e) {
+                fbStatus = { sdk: true, err: e ? e.message : 'init failed' };
+                return false;
+            }
+        }
+
+        function loadScript(src) {
+            return new Promise(function(resolve, reject) {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        async function ensureFirebaseLibs() {
+            if (window.firebase &&
+                typeof firebase.firestore === 'function' &&
+                typeof firebase.auth === 'function') return true;
+            const bases = [
+                'https://www.gstatic.com/firebasejs/10.12.2/',
+                'https://cdn.jsdelivr.net/npm/firebase@10.12.2/',
+                'https://unpkg.com/firebase@10.12.2/'
+            ];
+            const files = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js'];
+            for (const base of bases) {
+                try {
+                    for (const f of files) {
+                        if (window.firebase && typeof firebase.firestore === 'function' && typeof firebase.auth === 'function') break;
+                        await loadScript(base + f);
+                    }
+                    if (window.firebase && typeof firebase.firestore === 'function' && typeof firebase.auth === 'function') return true;
+                } catch (e) {}
+            }
+            return false;
+        }
+
+        async function checkCloudStatus() {
+            const box = document.getElementById('cloud-status');
+            const txt = document.getElementById('cloud-status-text');
+            if (!box || !txt) return;
+            box.classList.remove('d-none');
+            try {
+                if (!window.firebase || typeof firebase.firestore !== 'function' || typeof firebase.auth !== 'function') {
+                    txt.textContent = 'Firebase SDK not loaded. Check internet / CDN blocked.';
+                    box.style.color = '#ff6b6b';
+                    return;
+                }
+                txt.textContent = 'Firebase SDK OK. Checking server...';
+                box.style.color = '#ffb700';
+                const r = await fetch('https://firestore.googleapis.com/v1/projects/' + firebaseConfig.projectId +
+                    '/databases/(default)/documents/pos?key=' + firebaseConfig.apiKey);
+                if (r.status === 403) {
+                    txt.textContent = 'Server connected (403). Either Firestore Rules not published, or API key is restricted. Open Console -> Firestore -> Rules -> Publish.';
+                    box.style.color = '#ffb700';
+                } else if (r.status === 200) {
+                    txt.textContent = 'Firebase connected (200). Login should work.';
+                    box.style.color = '#2ecc71';
+                } else {
+                    txt.textContent = 'Server replied ' + r.status + '. Usually means rules/API key issue.';
+                    box.style.color = '#ffb700';
+                }
+            } catch (err) {
+                txt.textContent = 'Cannot reach Firebase (network/region block or API key restricted).';
+                box.style.color = '#ff6b6b';
+            }
         }
 
         let pendingImagePick = null;
@@ -2399,9 +2492,54 @@
             hideLoginAlert();
         }
 
+        function submitCloudLogin(u, p) {
+            const submitBtn = document.getElementById('login-submit-btn');
+            submitBtn.disabled = true;
+            hideLoginAlert();
+            return (async function() {
+                try {
+                    if (!initFirebaseOnce()) throw new Error('Firebase SDK not loaded');
+                    const credential = signUpMode
+                        ? await (async function() {
+                            if (p.length < 6) throw { code: 'auth/weak-password' };
+                            const cp = document.getElementById('confirm-password').value;
+                            if (p !== cp) throw { code: 'auth/mismatch' };
+                            const cred = await auth.createUserWithEmailAndPassword(u, p);
+                            const first = (await db.collection('users').limit(1).get()).empty;
+                            await db.collection('users').doc(cred.user.uid).set({
+                                email: u,
+                                role: first ? 'SuperAdmin' : 'Cashier',
+                                status: 'Active'
+                            });
+                            return cred;
+                        })()
+                        : await auth.signInWithEmailAndPassword(u, p);
+                    const uid = credential.user.uid;
+                    let role = 'Cashier', status = 'Active';
+                    try {
+                        const snap = await db.collection('users').doc(uid).get();
+                        if (snap.exists) {
+                            role = snap.data().role || role;
+                            status = snap.data().status || status;
+                        }
+                    } catch (e) {}
+                    doLogin({ name: u.split('@')[0], username: u, role, status });
+                    return true;
+                } catch (err) {
+                    if (err && err.code === 'auth/mismatch') {
+                        showLoginAlert('Passwords do not match');
+                    } else {
+                        showLoginAlert(cleanAuthError(err));
+                    }
+                    return false;
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            })();
+        }
+
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            hideLoginAlert();
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value;
             if (!u || !p) {
@@ -2409,47 +2547,17 @@
                 return;
             }
             if (auth && db) {
-                const submitBtn = document.getElementById('login-submit-btn');
-                submitBtn.disabled = true;
-                (async function() {
-                    try {
-                        let credential;
-                        if (signUpMode) {
-                            if (p.length < 6) throw { code: 'auth/weak-password' };
-                            const cp = document.getElementById('confirm-password').value;
-                            if (p !== cp) throw { code: 'auth/mismatch' };
-                            credential = await auth.createUserWithEmailAndPassword(u, p);
-                            const first = (await db.collection('users').limit(1).get()).empty;
-                            await db.collection('users').doc(credential.user.uid).set({
-                                email: u,
-                                role: first ? 'SuperAdmin' : 'Cashier',
-                                status: 'Active'
-                            });
-                        } else {
-                            credential = await auth.signInWithEmailAndPassword(u, p);
-                        }
-                        const uid = credential.user.uid;
-                        let role = 'Cashier', status = 'Active';
-                        try {
-                            const snap = await db.collection('users').doc(uid).get();
-                            if (snap.exists) {
-                                role = snap.data().role || role;
-                                status = snap.data().status || status;
-                            }
-                        } catch (e) {}
-                        doLogin({ name: u.split('@')[0], username: u, role, status });
-                    } catch (err) {
-                        if (err && err.code === 'auth/mismatch') {
-                            showLoginAlert('Passwords do not match');
-                        } else {
-                            showLoginAlert(cleanAuthError(err));
-                        }
-                    } finally {
-                        submitBtn.disabled = false;
-                    }
-                })();
+                submitCloudLogin(u, p);
             } else {
-                showLoginAlert('Cloud login unavailable. Check your internet connection.');
+                showLoginAlert('Loading Firebase SDK from backup source...');
+                ensureFirebaseLibs().then(function(ok) {
+                    if (ok && initFirebaseOnce()) {
+                        submitCloudLogin(u, p);
+                    } else {
+                        checkCloudStatus();
+                        showLoginAlert('Could not connect to Firebase from any source. Check the status box below.');
+                    }
+                });
             }
         });
 
@@ -3266,6 +3374,8 @@ function saveSettings() {
                 document.getElementById('login-screen').classList.remove('d-none');
             }
         }
+
+        setTimeout(checkCloudStatus, 600);
     </script>
 </body>
 </html>
