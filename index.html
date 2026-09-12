@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -218,6 +219,12 @@
             font-family: 'SF Mono', 'Menlo', monospace;
             font-size: 12px; color: var(--text-secondary);
         }
+
+        .login-footer a {
+            color: var(--blue); font-weight: 600; text-decoration: none;
+        }
+
+        .login-footer a:hover { text-decoration: underline; }
 
         /* ============ SIDEBAR ============ */
         #sidebar-overlay {
@@ -1203,31 +1210,38 @@
 
             <div id="login-alert" class="login-alert">
                 <i class="fa-solid fa-exclamation-circle"></i>
-                Invalid username or password
+                <span id="login-alert-text">Invalid email or password</span>
             </div>
 
             <form id="login-form">
                 <div class="input-group">
-                    <label>Username</label>
+                    <label>Email</label>
                     <div class="input-wrap">
-                        <i class="fa-solid fa-user input-icon"></i>
-                        <input type="text" id="username" placeholder="Enter username" value="admin" required>
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="text" inputmode="email" id="username" placeholder="Email or username" autocomplete="email" required>
                     </div>
                 </div>
                 <div class="input-group">
                     <label>Password</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="password" placeholder="Enter password" value="admin1234@#" required>
+                        <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required>
                     </div>
                 </div>
-                <button type="submit" class="apple-btn apple-btn-primary" style="margin-top: 8px;">
-                    <i class="fa-solid fa-arrow-right"></i> Sign In
+                <div class="input-group d-none" id="confirm-password-group">
+                    <label>Confirm Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="confirm-password" placeholder="Re-enter password" autocomplete="new-password">
+                    </div>
+                </div>
+                <button type="submit" class="apple-btn apple-btn-primary" style="margin-top: 8px;" id="login-submit-btn">
+                    <i class="fa-solid fa-arrow-right"></i> <span id="login-btn-text">Sign In</span>
                 </button>
             </form>
 
-            <div class="login-footer">
-                <span>admin / admin1234@#</span>
+            <div class="login-footer" id="login-mode-footer">
+                Don't have an account? <a href="#" onclick="toggleLoginMode()">Create Account</a>
             </div>
         </div>
     </div>
@@ -1839,8 +1853,104 @@
         </div>
     </div>
 
+    <input type="file" id="product-image-input" accept="image/*" style="display:none;">
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtfHxDjnisYRnWLbJcnSYBADbLnlZTY2M",
+            authDomain: "adatacloudposmastur.firebaseapp.com",
+            projectId: "adatacloudposmastur",
+            storageBucket: "adatacloudposmastur.firebasestorage.app",
+            messagingSenderId: "478591097422",
+            appId: "1:478591097422:web:f02829be0e8c174624811f",
+            measurementId: "G-2KK3HK65PS"
+        };
+
+        let db = null;
+        let auth = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            db.enableIndexedDbPersistence().catch(function(err) {
+                if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+                    console.warn('Firestore offline persistence unavailable:', err);
+                }
+            });
+        } catch (e) {
+            db = null;
+            auth = null;
+        }
+
+        let pendingImagePick = null;
+        const productImageInput = document.getElementById('product-image-input');
+
+        function pickProductImage(callback) {
+            pendingImagePick = callback;
+            productImageInput.value = '';
+            productImageInput.click();
+        }
+
+        function compressImage(file, maxW, maxH, quality) {
+            return new Promise(function(resolve, reject) {
+                const reader = new FileReader();
+                reader.onerror = function() { reject(new Error('read error')); };
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onerror = function() { reject(new Error('image parse error')); };
+                    img.onload = function() {
+                        let w = img.width, h = img.height;
+                        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                        if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function saveImageToFirestore(productId, dataUrl) {
+            if (!db) return;
+            db.collection('productImages').doc('prod_' + productId).set({ dataUrl: dataUrl, updatedAt: Date.now() }).catch(function(err) {
+                console.error('Firestore image save failed:', err);
+            });
+        }
+
+        function deleteImageFromFirestore(productId) {
+            if (!db) return;
+            db.collection('productImages').doc('prod_' + productId).delete().catch(function() {});
+        }
+
+        productImageInput.addEventListener('change', function() {
+            const cb = pendingImagePick;
+            pendingImagePick = null;
+            const file = productImageInput.files && productImageInput.files[0];
+            if (!file) {
+                if (cb) cb(null);
+                return;
+            }
+            if (file.type && file.type.indexOf('image/') !== 0) {
+                toast('Please select an image file');
+                if (cb) cb(null);
+                return;
+            }
+            compressImage(file, 400, 400, 0.7).then(function(dataUrl) {
+                if (cb) cb(dataUrl);
+            }).catch(function() {
+                toast('Could not read that image');
+                if (cb) cb(null);
+            });
+        });
+
         const DB_KEY = 'pos_db_v1';
         const IDB_DB = 'ParaPOSDB';
         const IDB_STORE = 'appState';
@@ -1892,7 +2002,7 @@
                     { name: "Main Administrator", username: "admin", role: "SuperAdmin", status: "Active" },
                     { name: "Cashier Desk 1", username: "cashier1", role: "Cashier", status: "Active" }
                 ],
-                settings: { storeName: "Para/Outlet Store #1", receiptHeader: "123 Shopping Avenue, Commerce City", taxRate: 5, currency: "$", posCols: 7, posCardH: 170, posImgFill: "cover", posScale: 1, posPrint: false, kpWidth: 420, kpH: 68, kpFont: 26, kpGap: 12, kpColor: "blue", kpLayout: "calc", kpCenter: true }
+                settings: { storeName: "Para/Outlet Store #1", receiptHeader: "123 Shopping Avenue, Commerce City", taxRate: 5, currency: "$", posCols: 7, posCardH: 170, posImgFill: "cover", posScale: 1, posPrint: false, kpWidth: 420, kpH: 68, kpFont: 26, kpGap: 12, kpColor: "blue", kpLayout: "calc", kpCenter: true, theme: 'light', sidebarMode: 'lite' }
             };
         }
 
@@ -1918,23 +2028,248 @@
                 } else {
                     state = d;
                 }
-                idbLoad(DB_KEY).then(d => { if (d) { state = Object.assign(defaultState(), d); if (d.settings) state.settings = Object.assign(defaultState().settings, d.settings); } });
+                loadMetaSync();
+                idbLoad(DB_KEY).then(function(d) {
+                    if (!d) return;
+                    state = Object.assign(defaultState(), d);
+                    if (d.settings) state.settings = Object.assign(defaultState().settings, d.settings);
+                    if (typeof categories !== 'undefined') {
+                        categories = state.categories;
+                        products = state.products;
+                        salesHistory = state.salesHistory;
+                        vendors = state.vendors;
+                        cashLedger = state.cashLedger;
+                        expenses = state.expenses;
+                        users = state.users;
+                        settings = state.settings;
+                        if (currentUser) refreshAll();
+                    }
+                });
+                idbLoad('pos_meta').then(function(m) {
+                    if (m && typeof m === 'object') syncMeta = Object.assign(defaultMeta(), m);
+                });
             } catch (e) {
                 state = defaultState();
+                loadMetaSync();
             }
         }
 
-        function saveDB() {
+        function persistLocalDB() {
             state.categories = categories;
-            state.products = products;
             state.salesHistory = salesHistory;
             state.vendors = vendors;
             state.cashLedger = cashLedger;
             state.expenses = expenses;
             state.users = users;
             state.settings = settings;
-            localStorage.setItem(DB_KEY, JSON.stringify(state));
-            idbSave(DB_KEY, state);
+            state.products = products.map(function(p) {
+                const c = Object.assign({}, p);
+                c.image = '';
+                return c;
+            });
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(state));
+            } catch (e) {}
+            idbSave(DB_KEY, { categories, products, salesHistory, vendors, cashLedger, expenses, users, settings });
+        }
+
+        function saveDB() {
+            persistLocalDB();
+            syncAllToFirestore();
+        }
+
+        function fsPosDoc(key) {
+            return db.collection('pos').doc(key);
+        }
+
+        function migrateSalesToFirestore() {
+            if (!db) return;
+            salesHistory.forEach(function(s) {
+                if (s.fid) return;
+                s.fid = 'sale_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+                if (!s.ts) s.ts = Date.parse(s.date) || 0;
+                db.collection('sales').doc(s.fid).set(s).catch(function() {});
+            });
+        }
+
+        function syncAllToFirestore() {
+            if (!db) return;
+            const now = Date.now();
+            const dom = {
+                categories: { list: categories, updatedAt: now },
+                products: { list: products.map(function(p) {
+                    return { id: p.id, name: p.name, category: p.category, price: p.price, icon: p.icon };
+                }), updatedAt: now },
+                vendors: { list: vendors, updatedAt: now },
+                cashLedger: { list: cashLedger, updatedAt: now },
+                expenses: { list: expenses, updatedAt: now },
+                users: { list: users, updatedAt: now },
+                settings: { value: settings, updatedAt: now }
+            };
+            Object.keys(dom).forEach(function(key) {
+                const ser = JSON.stringify(dom[key]);
+                if (ser === (syncMeta.lastPush && syncMeta.lastPush[key])) return;
+                fsPosDoc(key).set(dom[key]).then(function() {
+                    syncMeta.lastPush[key] = ser;
+                    syncMeta.touch[key] = now;
+                    saveMeta();
+                }).catch(function() {});
+            });
+            migrateSalesToFirestore();
+        }
+
+        function migrateSalesToFirestore() {
+            if (!db) return;
+            salesHistory.forEach(function(s) {
+                if (s.fid) return;
+                s.fid = 'sale_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+                if (!s.ts) s.ts = Date.parse(s.date) || 0;
+                s.updatedAt = Date.now();
+                db.collection('sales').doc(s.fid).set(s).catch(function() {});
+            });
+        }
+
+        function defaultMeta() { return { lastPull: 0, touch: {}, lastPush: {} }; }
+
+        function saveMeta() {
+            try { localStorage.setItem('pos_meta', JSON.stringify(syncMeta)); } catch (e) {}
+            idbSave('pos_meta', syncMeta);
+        }
+
+        function loadMetaSync() {
+            try {
+                const r = localStorage.getItem('pos_meta');
+                if (r) { syncMeta = Object.assign(defaultMeta(), JSON.parse(r)); return; }
+            } catch (e) {}
+            syncMeta = defaultMeta();
+        }
+
+        let productImagesMap = {};
+        let syncMeta = null;
+        let subsStarted = false;
+
+        function refreshAll() {
+            renderCategories();
+            renderProducts(products);
+            renderProductsTable();
+            renderCategoryTable();
+            renderSalesHistory();
+            renderDashboard();
+            renderVendors();
+            renderLedger();
+            renderExpenses();
+            renderUsers();
+            loadSettingsForm();
+        }
+
+        function applyPosRemote(key, raw) {
+            switch (key) {
+                case 'categories': if (Array.isArray(raw)) categories = raw; break;
+                case 'products': if (Array.isArray(raw)) {
+                    products = raw.map(function(p) {
+                        return Object.assign({}, p, { image: productImagesMap[p.id] || '' });
+                    });
+                } break;
+                case 'vendors': if (Array.isArray(raw)) vendors = raw; break;
+                case 'cashLedger': if (Array.isArray(raw)) cashLedger = raw; break;
+                case 'expenses': if (Array.isArray(raw)) expenses = raw; break;
+                case 'users': if (Array.isArray(raw)) users = raw; break;
+                case 'settings': if (raw && typeof raw === 'object') {
+                    settings = Object.assign({}, defaultState().settings, raw);
+                    if ('theme' in raw) {
+                        document.documentElement.setAttribute('data-theme', raw.theme === 'dark' ? 'dark' : 'light');
+                        localStorage.setItem('theme', raw.theme);
+                        const tb = document.getElementById('theme-toggle');
+                        if (tb) tb.checked = raw.theme === 'dark';
+                    }
+                    if ('sidebarMode' in raw) {
+                        if (raw.sidebarMode === 'dock') document.body.setAttribute('data-sidebar-mode', 'dock');
+                        else document.body.removeAttribute('data-sidebar-mode');
+                        localStorage.setItem('sidebarMode', raw.sidebarMode);
+                    }
+                } break;
+            }
+        }
+
+        // REAL-TIME: any change in Firestore is applied instantly to this device
+        function subscribeAll() {
+            if (!db || subsStarted) return;
+            subsStarted = true;
+
+            function watchPosDoc(key) {
+                db.collection('pos').doc(key).onSnapshot(function(doc) {
+                    if (!doc.exists || !doc.data()) return;
+                    const raw = key === 'settings' ? (doc.data().value || {}) : (doc.data().list || []);
+                    applyPosRemote(key, raw);
+                    persistLocalDB();
+                    refreshAll();
+                }, function() {});
+            }
+            watchPosDoc('categories');
+            watchPosDoc('products');
+            watchPosDoc('vendors');
+            watchPosDoc('cashLedger');
+            watchPosDoc('expenses');
+            watchPosDoc('users');
+            watchPosDoc('settings');
+
+            db.collection('sales').orderBy('ts', 'desc').onSnapshot(function(snap) {
+                const incoming = [];
+                snap.forEach(function(d) {
+                    const s = Object.assign({}, d.data());
+                    s.fid = d.id;
+                    if (!s.ts) s.ts = Date.parse(s.date) || 0;
+                    incoming.push(s);
+                });
+                if (JSON.stringify(incoming) !== JSON.stringify(salesHistory)) {
+                    salesHistory = incoming;
+                    persistLocalDB();
+                    refreshAll();
+                }
+            }, function() {});
+
+            db.collection('productImages').onSnapshot(function(snap) {
+                snap.forEach(function(d) {
+                    const pid = parseInt(String(d.id).replace(/^prod_/, ''), 10);
+                    if (isNaN(pid)) return;
+                    productImagesMap[pid] = (d.data() && d.data().dataUrl) || '';
+                });
+                products = products.map(function(p) {
+                    return Object.assign({}, p, { image: productImagesMap[p.id] || '' });
+                });
+                persistLocalDB();
+                refreshAll();
+            }, function() {});
+        }
+
+        async function seedIfCloudEmpty() {
+            if (!db) return;
+            try {
+                var posSnap = await db.collection('pos').limit(1).get();
+                if (!posSnap.empty) return;
+                var salesSnap = await db.collection('sales').limit(1).get();
+                if (!salesSnap.empty) return;
+                syncAllToFirestore();
+            } catch (e) {}
+        }
+
+        async function purgeFirestore() {
+            if (!db) return;
+            try {
+                var snaps = await Promise.all([
+                    db.collection('pos').get(),
+                    db.collection('sales').get(),
+                    db.collection('productImages').get()
+                ]);
+                for (var i = 0; i < snaps.length; i++) {
+                    var docs = snaps[i].docs;
+                    for (var j = 0; j < docs.length; j += 400) {
+                        var batch = db.batch();
+                        docs.slice(j, j + 400).forEach(function(d) { batch.delete(d.ref); });
+                        await batch.commit();
+                    }
+                }
+            } catch (e) {}
         }
 
         loadDB();
@@ -1957,6 +2292,7 @@
             const isDark = document.getElementById('theme-toggle').checked;
             html.setAttribute('data-theme', isDark ? 'dark' : 'light');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if (currentUser) { settings.theme = isDark ? 'dark' : 'light'; saveDB(); }
         }
 
         function toggleThemeFromRow() {
@@ -1982,10 +2318,13 @@
             if (document.body.getAttribute('data-sidebar-mode') === 'dock') {
                 document.body.removeAttribute('data-sidebar-mode');
                 localStorage.setItem('sidebarMode', 'lite');
+                if (currentUser) settings.sidebarMode = 'lite';
             } else {
                 document.body.setAttribute('data-sidebar-mode', 'dock');
                 localStorage.setItem('sidebarMode', 'dock');
+                if (currentUser) settings.sidebarMode = 'dock';
             }
+            if (currentUser) saveDB();
         }
 
         // Sidebar
@@ -2024,15 +2363,93 @@
             return false;
         }
 
+        function showLoginAlert(msg) {
+            document.getElementById('login-alert-text').textContent = msg || 'Invalid email or password';
+            document.getElementById('login-alert').classList.add('show');
+        }
+
+        function hideLoginAlert() {
+            document.getElementById('login-alert').classList.remove('show');
+        }
+
+        function cleanAuthError(err) {
+            const map = {
+                'auth/user-not-found': 'No account found with this email. Click "Create Account" to register first',
+                'auth/invalid-email': 'Invalid email address',
+                'auth/invalid-login-credentials': 'Invalid email or password. Click "Create Account" if you have not registered',
+                'auth/wrong-password': 'Incorrect password',
+                'auth/email-already-in-use': 'An account with this email already exists',
+                'auth/weak-password': 'Password must be at least 6 characters',
+                'auth/too-many-requests': 'Too many attempts. Try again later',
+                'auth/network-request-failed': 'Network error. Please check your connection'
+            };
+            const code = err && err.code ? err.code : null;
+            return (code && map[code]) || (err && err.message) || 'Authentication failed';
+        }
+
+        let signUpMode = false;
+
+        function toggleLoginMode() {
+            signUpMode = !signUpMode;
+            document.getElementById('confirm-password-group').classList.toggle('d-none', !signUpMode);
+            document.getElementById('login-btn-text').textContent = signUpMode ? 'Create Account' : 'Sign In';
+            document.getElementById('login-mode-footer').innerHTML = signUpMode
+                ? "Have an account? <a href='#' onclick='toggleLoginMode()'>Sign In</a>"
+                : "Don't have an account? <a href='#' onclick='toggleLoginMode()'>Create Account</a>";
+            hideLoginAlert();
+        }
+
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            hideLoginAlert();
             const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            const user = users.find(x => x.username === u && x.status === 'Active');
-            if (user && (u === 'admin' && p === 'admin1234@#') || (user.role === 'Cashier' && p === 'cashier123')) {
-                doLogin(user);
+            const p = document.getElementById('password').value;
+            if (!u || !p) {
+                showLoginAlert('Please enter your email and password');
+                return;
+            }
+            if (auth && db) {
+                const submitBtn = document.getElementById('login-submit-btn');
+                submitBtn.disabled = true;
+                (async function() {
+                    try {
+                        let credential;
+                        if (signUpMode) {
+                            if (p.length < 6) throw { code: 'auth/weak-password' };
+                            const cp = document.getElementById('confirm-password').value;
+                            if (p !== cp) throw { code: 'auth/mismatch' };
+                            credential = await auth.createUserWithEmailAndPassword(u, p);
+                            const first = (await db.collection('users').limit(1).get()).empty;
+                            await db.collection('users').doc(credential.user.uid).set({
+                                email: u,
+                                role: first ? 'SuperAdmin' : 'Cashier',
+                                status: 'Active'
+                            });
+                        } else {
+                            credential = await auth.signInWithEmailAndPassword(u, p);
+                        }
+                        const uid = credential.user.uid;
+                        let role = 'Cashier', status = 'Active';
+                        try {
+                            const snap = await db.collection('users').doc(uid).get();
+                            if (snap.exists) {
+                                role = snap.data().role || role;
+                                status = snap.data().status || status;
+                            }
+                        } catch (e) {}
+                        doLogin({ name: u.split('@')[0], username: u, role, status });
+                    } catch (err) {
+                        if (err && err.code === 'auth/mismatch') {
+                            showLoginAlert('Passwords do not match');
+                        } else {
+                            showLoginAlert(cleanAuthError(err));
+                        }
+                    } finally {
+                        submitBtn.disabled = false;
+                    }
+                })();
             } else {
-                document.getElementById('login-alert').classList.add('show');
+                showLoginAlert('Cloud login unavailable. Check your internet connection.');
             }
         });
 
@@ -2041,7 +2458,11 @@
             localStorage.setItem(SESSION_KEY, JSON.stringify({ username: user.username }));
             document.getElementById('login-screen').classList.add('d-none');
             document.getElementById('app-layout').classList.remove('d-none');
-            document.getElementById('login-alert').classList.remove('show');
+            hideLoginAlert();
+            const avatar = document.querySelector('.user-avatar');
+            if (avatar) avatar.textContent = (user.name || user.username || 'U')[0].toUpperCase();
+            const nameSpan = document.querySelector('.user-btn > span');
+            if (nameSpan) nameSpan.textContent = user.name || user.username;
             applyRoleRestrictions();
             initApp();
         }
@@ -2065,11 +2486,14 @@
 
         function logout() {
             currentUser = null;
+            if (auth) auth.signOut().catch(function() {});
             localStorage.removeItem(SESSION_KEY);
             document.getElementById('login-screen').classList.remove('d-none');
             document.getElementById('app-layout').classList.add('d-none');
-            document.getElementById('login-alert').classList.remove('show');
+            hideLoginAlert();
             document.getElementById('user-dropdown').classList.remove('show');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         }
 
         // Clock
@@ -2109,7 +2533,9 @@
             renderExpenses();
             renderUsers();
             loadSettingsForm();
-            saveDB();
+            seedIfCloudEmpty();
+            subscribeAll();
+            persistLocalDB();
             goDashboard();
         }
 
@@ -2245,7 +2671,7 @@
             const total = amount + tax;
             const cashier = currentUser ? currentUser.name : 'Admin';
 
-            salesHistory.unshift({ invoice: invId, date: now, itemsCount: 1, total, payment: "Cash", cashier });
+            salesHistory.unshift({ invoice: invId, date: now, ts: Date.now(), itemsCount: 1, total, payment: "Cash", cashier });
             cashLedger.unshift({ time: now, description: 'Sale ' + invId + ' - ' + p.name, type: 'Sales', amount: total });
             renderSalesHistory();
             renderDashboard();
@@ -2467,13 +2893,26 @@
             const price = Number(prompt("Price:") || 0);
             const cat = prompt("Category (" + categories.join(", ") + "):") || categories[0] || "General";
             if (cat && !categories.includes(cat)) categories.push(cat);
-            const image = prompt("Image URL (paste link or leave empty):") || '';
-            products.push({ id: nextProductId(), name: name.trim(), price, category: cat, icon: "fa-cube", image });
-            saveDB();
-            renderCategories();
-            renderProducts(products);
-            renderCategoryTable();
-            renderProductsTable();
+            pickProductImage(function(imageData) {
+                const id = nextProductId();
+                products.push({ id, name: name.trim(), price, category: cat, icon: "fa-cube", image: imageData || '' });
+                saveDB();
+                renderCategories();
+                renderProducts(products);
+                renderCategoryTable();
+                renderProductsTable();
+                if (imageData) {
+                    if (imageData.indexOf('data:') === 0) {
+                        saveImageToFirestore(id, imageData);
+                        if (syncMeta) syncMeta.touch['img_' + id] = Date.now();
+                        toast('Image saved to Firestore');
+                    } else {
+                        toast('Product added');
+                    }
+                } else {
+                    toast('Product added');
+                }
+            });
         }
 
         function editProduct(id) {
@@ -2484,21 +2923,35 @@
             const price = Number(prompt("Price:", p.price));
             const cat = prompt("Category:", p.category) || p.category;
             if (!categories.includes(cat)) categories.push(cat);
-            const image = prompt("Image URL:", p.image);
             p.name = name.trim();
             p.price = price;
             p.category = cat;
-            p.image = image;
-            saveDB();
-            renderCategories();
-            renderProducts(products);
-            renderCategoryTable();
-            renderProductsTable();
+            const finish = function() {
+                saveDB();
+                renderCategories();
+                renderProducts(products);
+                renderCategoryTable();
+                renderProductsTable();
+            };
+            if (confirm('Change the product image? OK = upload new, Cancel = keep current')) {
+                pickProductImage(function(imageData) {
+                    if (imageData) {
+                        p.image = imageData;
+                        if (imageData.indexOf('data:') === 0) saveImageToFirestore(p.id, imageData);
+                        syncMeta.touch['img_' + p.id] = Date.now();
+                        toast('New image saved');
+                    }
+                    finish();
+                });
+            } else {
+                finish();
+            }
         }
 
         function deleteProduct(id) {
             const p = products.find(x => x.id === id);
             if (!p || !confirm('Delete product "' + p.name + '"?')) return;
+            deleteImageFromFirestore(id);
             products = products.filter(x => x.id !== id);
             saveDB();
             renderProducts(products);
@@ -2757,12 +3210,16 @@ function saveSettings() {
             toast('Settings saved');
         }
 
-        function resetAllData() {
+        async function resetAllData() {
             if (!confirm('Are you sure? ALL data will be permanently deleted!')) return;
             if (!confirm('This cannot be undone. Proceed?')) return;
+            try {
+                await purgeFirestore();
+            } catch (e) {}
             localStorage.removeItem(DB_KEY);
             localStorage.removeItem(SESSION_KEY);
             localStorage.removeItem('sidebarMode');
+            localStorage.removeItem('pos_meta');
             try {
                 indexedDB.deleteDatabase(IDB_DB);
             } catch (e) {}
@@ -2786,8 +3243,28 @@ function saveSettings() {
             });
         }
 
-        if (!autoLogin()) {
-            document.getElementById('login-screen').classList.remove('d-none');
+        if (auth && db) {
+            auth.onAuthStateChanged(function(fbUser) {
+                if (fbUser && !currentUser) {
+                    const email = fbUser.email || '';
+                    db.collection('users').doc(fbUser.uid).get().then(function(snap) {
+                        let role = 'Cashier', status = 'Active';
+                        if (snap.exists && snap.data()) {
+                            role = snap.data().role || role;
+                            status = snap.data().status || status;
+                        }
+                        doLogin({ name: email.split('@')[0], username: email, role, status });
+                    }).catch(function() {
+                        doLogin({ name: email.split('@')[0], username: email, role: 'Cashier', status: 'Active' });
+                    });
+                } else if (!fbUser && !currentUser) {
+                    document.getElementById('login-screen').classList.remove('d-none');
+                }
+            });
+        } else {
+            if (!autoLogin()) {
+                document.getElementById('login-screen').classList.remove('d-none');
+            }
         }
     </script>
 </body>
